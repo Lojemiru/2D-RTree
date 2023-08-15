@@ -26,13 +26,13 @@ namespace RTree
 {
     public struct dimension
     {
-        public float max;
-        public float min;
+        public int max;
+        public int min;
     }
 
 
     /// <summary>
-    /// Currently hardcoded to 3 dimensions, but could be extended.
+    /// Currently hardcoded to 2 dimensions, but could be extended.
     /// </summary>
     public class Rectangle
     {
@@ -40,17 +40,17 @@ namespace RTree
         /// Number of dimensions in a rectangle. In theory this
         /// could be exended to three or more dimensions.
         /// </summary>
-        internal const int DIMENSIONS = 3;
+        internal const int DIMENSIONS = 2;
 
         /// <summary>
         /// array containing the minimum value for each dimension; ie { min(x), min(y) }
         /// </summary>
-        internal float[] max;
+        internal int[] max;
 
         /// <summary>
         /// array containing the maximum value for each dimension; ie { max(x), max(y) }
         /// </summary>
-        internal float[] min;
+        internal int[] min;
 
         /// <summary>
         /// ctor
@@ -59,13 +59,11 @@ namespace RTree
         /// <param name="y1">coordinate of any corner of the rectangle</param>
         /// <param name="x2">coordinate of the opposite corner</param>
         /// <param name="y2">coordinate of the opposite corner</param>
-        /// <param name="z1">coordinate of any corner of the rectangle</param>
-        /// <param name="z2">coordinate of the opposite corner</param>
-        public Rectangle(float x1, float y1, float x2, float y2, float z1, float z2)
+        public Rectangle(int x1, int y1, int x2, int y2)
         {
-            min = new float[DIMENSIONS];
-            max = new float[DIMENSIONS];
-            set(x1, y1, x2, y2, z1, z2);
+            min = new int[DIMENSIONS];
+            max = new int[DIMENSIONS];
+            set(x1, y1, x2, y2);
         }
 
         /// <summary>
@@ -73,7 +71,7 @@ namespace RTree
         /// </summary>
         /// <param name="min">min array containing the minimum value for each dimension; ie { min(x), min(y) }</param>
         /// <param name="max">max array containing the maximum value for each dimension; ie { max(x), max(y) }</param>
-        public Rectangle(float[] min, float[] max)
+        public Rectangle(int[] min, int[] max)
         {
             if (min.Length != DIMENSIONS || max.Length != DIMENSIONS)
             {
@@ -81,8 +79,8 @@ namespace RTree
                           "min and max arrays must be of length " + DIMENSIONS);
             }
 
-            this.min = new float[DIMENSIONS];
-            this.max = new float[DIMENSIONS];
+            this.min = new int[DIMENSIONS];
+            this.max = new int[DIMENSIONS];
 
             set(min, max);
         }
@@ -94,16 +92,12 @@ namespace RTree
         /// <param name="y1">coordinate of any corner of the rectangle</param>
         /// <param name="x2">coordinate of the opposite corner</param>
         /// <param name="y2">coordinate of the opposite corner</param>
-        /// <param name="z1">coordinate of any corner of the rectangle</param>
-        /// <param name="z2">coordinate of the opposite corner</param>
-        internal void set(float x1, float y1, float x2, float y2, float z1, float z2)
+        internal void set(int x1, int y1, int x2, int y2)
         {
             min[0] = Math.Min(x1, x2);
             min[1] = Math.Min(y1, y2);
-            min[2] = Math.Min(z1, z2);
             max[0] = Math.Max(x1, x2);
             max[1] = Math.Max(y1, y2);
-            max[2] = Math.Max(z1, z2);
         }
 
         /// <summary>
@@ -128,7 +122,7 @@ namespace RTree
         /// </summary>
         /// <param name="min">min array containing the minimum value for each dimension; ie { min(x), min(y) }</param>
         /// <param name="max">max array containing the maximum value for each dimension; ie { max(x), max(y) }</param>
-        internal void set(float[] min, float[] max)
+        internal void set(int[] min, int[] max)
         {
             System.Array.Copy(min, 0, this.min, 0, DIMENSIONS);
             System.Array.Copy(max, 0, this.max, 0, DIMENSIONS);
@@ -220,19 +214,19 @@ namespace RTree
         /// </summary>
         /// <param name="p">Point to find the distance to</param>
         /// <returns>distance beween this rectangle and the passed point.</returns>
-        internal float distance(Point p)
+        internal int distance(Point p)
         {
-            float distanceSquared = 0;
+            int distanceSquared = 0;
             for (int i = 0; i < DIMENSIONS; i++)
             {
-                float greatestMin = Math.Max(min[i], p.coordinates[i]);
-                float leastMax = Math.Min(max[i], p.coordinates[i]);
+                int greatestMin = Math.Max(min[i], p.coordinates[i]);
+                int leastMax = Math.Min(max[i], p.coordinates[i]);
                 if (greatestMin > leastMax)
                 {
                     distanceSquared += ((greatestMin - leastMax) * (greatestMin - leastMax));
                 }
             }
-            return (float)Math.Sqrt(distanceSquared);
+            return (int)Math.Sqrt(distanceSquared);
         }
 
         /// <summary>
@@ -241,28 +235,28 @@ namespace RTree
         /// </summary>
         /// <param name="r">Rectangle to find the distance to</param>
         /// <returns>distance between this rectangle and the passed rectangle</returns>
-        internal float distance(Rectangle r)
+        internal int distance(Rectangle r)
         {
-            float distanceSquared = 0;
+            int distanceSquared = 0;
             for (int i = 0; i < DIMENSIONS; i++)
             {
-                float greatestMin = Math.Max(min[i], r.min[i]);
-                float leastMax = Math.Min(max[i], r.max[i]);
+                int greatestMin = Math.Max(min[i], r.min[i]);
+                int leastMax = Math.Min(max[i], r.max[i]);
                 if (greatestMin > leastMax)
                 {
                     distanceSquared += ((greatestMin - leastMax) * (greatestMin - leastMax));
                 }
             }
-            return (float)Math.Sqrt(distanceSquared);
+            return (int)Math.Sqrt(distanceSquared);
         }
 
         /// <summary>
         /// Return the squared distance from this rectangle to the passed point
         /// </summary>
-        internal float distanceSquared(int dimension, float point)
+        internal int distanceSquared(int dimension, int point)
         {
-            float distanceSquared = 0;
-            float tempDistance = point - max[dimension];
+            int distanceSquared = 0;
+            int tempDistance = point - max[dimension];
             for (int i = 0; i < 2; i++)
             {
                 if (tempDistance > 0)
@@ -279,12 +273,12 @@ namespace RTree
         /// Return the furthst possible distance between this rectangle and
         /// the passed rectangle. 
         /// </summary>
-        internal float furthestDistance(Rectangle r)
+        internal int furthestDistance(Rectangle r)
         {
             //Find the distance between this rectangle and each corner of the
             //passed rectangle, and use the maximum.
 
-            float distanceSquared = 0;
+            int distanceSquared = 0;
 
             for (int i = 0; i < DIMENSIONS; i++)
             {
@@ -293,7 +287,7 @@ namespace RTree
                 //distanceSquared += Math.Max(distanceSquared(i, r.min[i]), distanceSquared(i, r.max[i]));
             }
 
-            return (float)Math.Sqrt(distanceSquared);
+            return (int)Math.Sqrt(distanceSquared);
         }
 
         /// <summary>
@@ -305,9 +299,9 @@ namespace RTree
         /// compute the difference in area of the union and the
         /// original rectangle
         /// </param>
-        internal float enlargement(Rectangle r)
+        internal int enlargement(Rectangle r)
         {
-            float enlargedArea = (Math.Max(max[0], r.max[0]) - Math.Min(min[0], r.min[0])) *
+            int enlargedArea = (Math.Max(max[0], r.max[0]) - Math.Min(min[0], r.min[0])) *
                                  (Math.Max(max[1], r.max[1]) - Math.Min(min[1], r.min[1]));
 
             return enlargedArea - area();
@@ -317,7 +311,7 @@ namespace RTree
         /// Compute the area of this rectangle.
         /// </summary>
         /// <returns> The area of this rectangle</returns>
-        internal float area()
+        internal int area()
         {
             return (max[0] - min[0]) * (max[1] - min[1]);
         }
@@ -355,7 +349,7 @@ namespace RTree
             return union;
         }
 
-        internal bool CompareArrays(float[] a1, float[] a2)
+        internal bool CompareArrays(int[] a1, int[] a2)
         {
             if ((a1 == null) || (a2 == null))
                 return false;

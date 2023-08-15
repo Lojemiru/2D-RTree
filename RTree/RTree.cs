@@ -65,9 +65,6 @@ namespace RTree
         //private TIntObjectHashMap nodeMap = new TIntObjectHashMap();
         private Dictionary<int, Node<T>> nodeMap = new Dictionary<int, Node<T>>();
 
-        // internal consistency checking - set to true if debugging tree corruption
-        public bool INTERNAL_CONSISTENCY_CHECKING = false;
-
         // used to mark the status of entries during a Node&lt;T&gt; split
         private const int ENTRY_STATUS_ASSIGNED = 0;
         private const int ENTRY_STATUS_UNASSIGNED = 1;
@@ -141,14 +138,12 @@ namespace RTree
             // per node, but will be inefficient.
             if (maxNodeEntries < 2)
             {
-                Debug.WriteLine($"Invalid MaxNodeEntries = {maxNodeEntries} Resetting to default value of {DEFAULT_MAX_NODE_ENTRIES}");
                 maxNodeEntries = DEFAULT_MAX_NODE_ENTRIES;
             }
 
             // The MinNodeEntries must be less than or equal to (int) (MaxNodeEntries / 2)
             if (minNodeEntries < 1 || minNodeEntries > maxNodeEntries / 2)
             {
-                Debug.WriteLine("MinNodeEntries must be between 1 and MaxNodeEntries / 2");
                 minNodeEntries = maxNodeEntries / 2;
             }
 
@@ -162,8 +157,7 @@ namespace RTree
 
             Node<T> root = new Node<T>(rootNodeId, 1, maxNodeEntries);
             nodeMap.Add(rootNodeId, root);
-
-            Debug.WriteLine($"init()  MaxNodeEntries = {maxNodeEntries}, MinNodeEntries = {minNodeEntries}");
+            
             locker.ReleaseWriterLock();
         }
 
@@ -187,7 +181,6 @@ namespace RTree
 
         private void add(Rectangle r, int id)
         {
-            Debug.WriteLine($"Adding rectangle {r}, id {id}");
 
             add(r.copy(), id, 1);
 
@@ -236,11 +229,6 @@ namespace RTree
                 root.addEntry(newNode.mbr, newNode.nodeId);
                 root.addEntry(oldRoot.mbr, oldRoot.nodeId);
                 nodeMap.Add(rootNodeId, root);
-            }
-
-            if (INTERNAL_CONSISTENCY_CHECKING)
-            {
-                checkConsistency(rootNodeId, treeHeight, null);
             }
         }
 
@@ -293,7 +281,6 @@ namespace RTree
 
                 if (!n.isLeaf())
                 {
-                    Debug.WriteLine($"searching Node<T> {n.nodeId}, from index {startIndex}");
                     bool contains = false;
                     for (int i = startIndex; i < n.entryCount; i++)
                     {
@@ -573,13 +560,6 @@ namespace RTree
             // choose two entries to be the first elements of the groups. Assign
             // each to a group.
 
-            // debug code
-#if DEBUG
-            float initialArea = 0;
-            Rectangle union = n.mbr.union(newRect);
-            initialArea = union.area();
-#endif
-
             System.Array.Copy(initialEntryStatus, 0, entryStatus, 0, maxNodeEntries);
 
             Node<T> newNode = null;
@@ -632,27 +612,6 @@ namespace RTree
 
             n.reorganize(this);
 
-            // check that the MBR stored for each Node&lt;T&gt; is correct.
-            if (INTERNAL_CONSISTENCY_CHECKING)
-            {
-                if (!n.mbr.Equals(calculateMBR(n)))
-                {
-                    Debug.WriteLine("Error: splitNode old Node<T> MBR wrong");
-                }
-
-                if (!newNode.mbr.Equals(calculateMBR(newNode)))
-                {
-                    Debug.WriteLine("Error: splitNode new Node<T> MBR wrong");
-                }
-            }
-
-            // debug code
-#if DEBUG
-            float newArea = n.mbr.area() + newNode.mbr.area();
-            float percentageIncrease = (100 * (newArea - initialArea)) / initialArea;
-            Debug.WriteLine($"Node { n.nodeId} split. New area increased by {percentageIncrease}%");
-#endif
-
             return newNode;
         }
 
@@ -676,8 +635,6 @@ namespace RTree
             // for the purposes of picking seeds, take the MBR of the Node&lt;T&gt; to include
             // the new rectangle aswell.
             n.mbr.add(newRect);
-
-            Debug.WriteLine($"pickSeeds(): NodeId = {n.nodeId}, newRect = {newRect}");
 
             for (int d = 0; d < Rectangle.DIMENSIONS; d++)
             {
@@ -709,14 +666,6 @@ namespace RTree
                     // by dividing by the widths of the entire set along the corresponding
                     // dimension
                     float normalizedSeparation = (tempHighestLow - tempLowestHigh) / (n.mbr.max[d] - n.mbr.min[d]);
-
-                    if (normalizedSeparation > 1 || normalizedSeparation < -1)
-                    {
-                        Debug.WriteLine("Invalid normalized separation");
-                    }
-
-                    Debug.WriteLine($"Entry {i}, dimension {d}: HighestLow = {tempHighestLow} (index {tempHighestLowIndex})" + ", LowestHigh = " +
-                              tempLowestHigh + $" (index {tempLowestHighIndex}, NormalizedSeparation = {normalizedSeparation}");
 
                     // PS3 [Select the most extreme pair] Choose the pair with the greatest
                     // normalized separation along any dimension.
@@ -775,18 +724,10 @@ namespace RTree
 
             maxDifference = float.NegativeInfinity;
 
-            Debug.WriteLine("pickNext()");
-
             for (int i = 0; i < maxNodeEntries; i++)
             {
                 if (entryStatus[i] == ENTRY_STATUS_UNASSIGNED)
                 {
-
-                    if (n.entries[i] == null)
-                    {
-                        Debug.WriteLine($"Error: Node<T> {n.nodeId}, entry {i} is null");
-                    }
-
                     float nIncrease = n.mbr.enlargement(n.entries[i]);
                     float newNodeIncrease = newNode.mbr.enlargement(n.entries[i]);
                     float difference = Math.Abs(nIncrease - newNodeIncrease);
@@ -821,9 +762,6 @@ namespace RTree
                         }
                         maxDifference = difference;
                     }
-
-                    Debug.WriteLine($"Entry {i} group0 increase = {nIncrease}, group1 increase = {newNodeIncrease}, diff = " + 
-                        difference + $", MaxDiff = {maxDifference} (entry {next})");
                 }
             }
 
@@ -918,7 +856,7 @@ namespace RTree
             }
         }
 
-        private Rectangle oldRectangle = new Rectangle(0, 0, 0, 0, 0, 0);
+        private Rectangle oldRectangle = new Rectangle(0, 0, 0, 0);
 
         /// <summary>
         /// Used by delete(). Ensures that all nodes from the passed node
@@ -1000,11 +938,6 @@ namespace RTree
             // CL2 [Leaf check] If N is a leaf, return N
             while (true)
             {
-                if (n == null)
-                {
-                    Debug.WriteLine($"Could not get root Node<T> ({rootNodeId})");
-                }
-
                 if (n.level == level)
                 {
                     return n;
@@ -1056,11 +989,6 @@ namespace RTree
                 Node<T> parent = getNode(parents.Pop());
                 int entry = parentsEntry.Pop();
 
-                if (parent.ids[entry] != n.nodeId)
-                {
-                    Debug.WriteLine($"Error: entry {entry} in Node<T> {parent.nodeId} should point to Node<T> {n.nodeId}; actually points to Node<T> {parent.ids[entry]}");
-                }
-
                 if (!parent.entries[entry].Equals(n.mbr))
                 {
                     parent.entries[entry].set(n.mbr.min, n.mbr.max);
@@ -1100,73 +1028,6 @@ namespace RTree
 
             return nn;
         }
-
-        /// <summary>
-        /// Check the consistency of the tree.
-        /// </summary>
-        private void checkConsistency(int nodeId, int expectedLevel, Rectangle expectedMBR)
-        {
-            // go through the tree, and check that the internal data structures of 
-            // the tree are not corrupted.    
-            Node<T> n = getNode(nodeId);
-
-            if (n == null)
-            {
-                Debug.WriteLine($"Error: Could not read Node<T> {nodeId}");
-            }
-
-            if (n.level != expectedLevel)
-            {
-                Debug.WriteLine($"Error: Node<T> {nodeId}, expected level {expectedLevel}, actual level {n.level}");
-            }
-
-            Rectangle calculatedMBR = calculateMBR(n);
-
-            if (!n.mbr.Equals(calculatedMBR))
-            {
-                Debug.WriteLine($"Error: Node<T> {nodeId}, calculated MBR does not equal stored MBR");
-            }
-
-            if (expectedMBR != null && !n.mbr.Equals(expectedMBR))
-            {
-                Debug.WriteLine($"Error: Node<T> {nodeId}, expected MBR (from parent) does not equal stored MBR");
-            }
-
-            // Check for corruption where a parent entry is the same object as the child MBR
-            if (expectedMBR != null && n.mbr.sameObject(expectedMBR))
-            {
-                Debug.WriteLine($"Error: Node<T> {nodeId} MBR using same rectangle object as parent's entry");
-            }
-
-            for (int i = 0; i < n.entryCount; i++)
-            {
-                if (n.entries[i] == null)
-                {
-                    Debug.WriteLine($"Error: Node<T> {nodeId}, Entry {i} is null");
-                }
-
-                if (n.level > 1)
-                { // if not a leaf
-                    checkConsistency(n.ids[i], n.level - 1, n.entries[i]);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Given a Node<T> object, calculate the Node<T> MBR from it's entries.
-        /// Used in consistency checking
-        /// </summary>
-        private Rectangle calculateMBR(Node<T> n)
-        {
-            Rectangle mbr = new Rectangle(n.entries[0].min, n.entries[0].max);
-
-            for (int i = 1; i < n.entryCount; i++)
-            {
-                mbr.add(n.entries[i]);
-            }
-            return mbr;
-        }
-
 
         public int Count
         {
