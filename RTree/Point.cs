@@ -18,51 +18,46 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 
 // Ported to C# By Dror Gluska, April 9th, 2009
-namespace RTree
+namespace RTree;
+
+/// <summary>
+/// Currently hardcoded to 3 dimensions, but could be extended.
+/// </summary>
+public readonly struct Point
 {
+    /// <summary>
+    /// Number of dimensions in a point. In theory this
+    /// could be exended to three or more dimensions.
+    /// </summary>
+    private const int DIMENSIONS = 2;
 
     /// <summary>
-    /// Currently hardcoded to 3 dimensions, but could be extended.
+    /// The (x, y) coordinates of the point.
     /// </summary>
-    public class Point
+    internal readonly int[] coordinates;
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    /// <param name="x">The x coordinate of the point</param>
+    /// <param name="y">The y coordinate of the point</param>
+    public Point(int x, int y)
     {
-        /// <summary>
-        /// Number of dimensions in a point. In theory this
-        /// could be exended to three or more dimensions.
-        /// </summary>
-        private const int DIMENSIONS = 3;
+        coordinates = new int[DIMENSIONS];
+        coordinates[0] = x;
+        coordinates[1] = y;
+    }
 
-        /// <summary>
-        /// The (x, y) coordinates of the point.
-        /// </summary>
-        internal float[] coordinates;
+    /// <summary>
+    /// retrieve coordinate from point
+    /// <para>probable dimensions:</para>
+    /// <para>X = 0, Y = 1</para>
+    /// </summary>
+    public float? Get(int dimension)
+    {
+        if (coordinates.Length >= dimension)
+            return coordinates[dimension];
 
-
-        /// <summary>
-        /// Constructor.
-        /// </summary>
-        /// <param name="x">The x coordinate of the point</param>
-        /// <param name="y">The y coordinate of the point</param>
-        /// <param name="z">The z coordinate of the point</param>
-        public Point(float x, float y,float z)
-        {
-            coordinates = new float[DIMENSIONS];
-            coordinates[0] = x;
-            coordinates[1] = y;
-            coordinates[2] = z;
-        }
-
-        /// <summary>
-        /// retrieve coordinate from point
-        /// <para>probable dimensions:</para>
-        /// <para>X = 0, Y = 1, Z = 2</para>
-        /// </summary>
-        public float? get(int dimension)
-        {
-            if (coordinates.Length >= dimension)
-                return coordinates[dimension];
-
-            return null;
-        }
+        return null;
     }
 }

@@ -18,175 +18,148 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Ported to C# By Dror Gluska, April 9th, 2009
-namespace RTree
+namespace RTree;
+
+/// <summary>
+/// Used by RTree. There are no public methods in this class.
+/// </summary>
+internal sealed class Node<T>
 {
-    /// <summary>
-    /// Used by RTree. There are no public methods in this class.
-    /// </summary>
-    internal class Node<T>
+    internal readonly int nodeId = 0;
+    internal Rectangle mbr = null;
+    internal readonly Rectangle[] entries = null;
+    internal readonly int[] ids = null;
+    internal readonly int level;
+    internal int entryCount;
+
+    internal Node(int nodeId, int level, int maxNodeEntries)
     {
-        internal int nodeId = 0;
-        internal Rectangle mbr = null;
-        internal Rectangle[] entries = null;
-        internal int[] ids = null;
-        internal int level;
-        internal int entryCount;
+        this.nodeId = nodeId;
+        this.level = level;
+        entries = new Rectangle[maxNodeEntries];
+        ids = new int[maxNodeEntries];
+    }
 
-        public Node(int nodeId, int level, int maxNodeEntries)
+    internal void AddEntry(Rectangle r, int id)
+    {
+        ids[entryCount] = id;
+        entries[entryCount] = r.Copy();
+        entryCount++;
+        if (mbr == null)
         {
-            this.nodeId = nodeId;
-            this.level = level;
-            entries = new Rectangle[maxNodeEntries];
-            ids = new int[maxNodeEntries];
+            mbr = r.Copy();
         }
-
-        internal void addEntry(Rectangle r, int id)
+        else
         {
-            ids[entryCount] = id;
-            entries[entryCount] = r.copy();
-            entryCount++;
-            if (mbr == null)
-            {
-                mbr = r.copy();
-            }
-            else
-            {
-                mbr.add(r);
-            }
-        }
-
-        internal void addEntryNoCopy(Rectangle r, int id)
-        {
-            ids[entryCount] = id;
-            entries[entryCount] = r;
-            entryCount++;
-            if (mbr == null)
-            {
-                mbr = r.copy();
-            }
-            else
-            {
-                mbr.add(r);
-            }
-        }
-
-        /// <summary>
-        /// Return the index of the found entry, or -1 if not found
-        /// </summary>
-        internal int findEntry(Rectangle r, int id)
-        {
-            for (int i = 0; i < entryCount; i++)
-            {
-                if (id == ids[i] && r.Equals(entries[i]))
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        // delete entry. This is done by setting it to null and copying the last entry into its space.
-
-        /// <summary>
-        /// delete entry. This is done by setting it to null and copying the last entry into its space.
-        /// </summary>
-        internal void deleteEntry(int i, int minNodeEntries)
-        {
-            int lastIndex = entryCount - 1;
-            Rectangle deletedRectangle = entries[i];
-            entries[i] = null;
-            if (i != lastIndex)
-            {
-                entries[i] = entries[lastIndex];
-                ids[i] = ids[lastIndex];
-                entries[lastIndex] = null;
-            }
-            entryCount--;
-
-            // if there are at least minNodeEntries, adjust the MBR.
-            // otherwise, don't bother, as the Node<T> will be 
-            // eliminated anyway.
-            if (entryCount >= minNodeEntries)
-            {
-                recalculateMBR(deletedRectangle);
-            }
-        }
-
-        /// <summary>
-        /// oldRectangle is a rectangle that has just been deleted or made smaller.
-        /// Thus, the MBR is only recalculated if the OldRectangle influenced the old MBR
-        /// </summary>
-        internal void recalculateMBR(Rectangle deletedRectangle)
-        {
-            if (mbr.edgeOverlaps(deletedRectangle))
-            {
-                mbr.set(entries[0].min, entries[0].max);
-
-                for (int i = 1; i < entryCount; i++)
-                {
-                    mbr.add(entries[i]);
-                }
-            }
-        }
-
-        public int getEntryCount()
-        {
-            return entryCount;
-        }
-
-        public Rectangle getEntry(int index)
-        {
-            if (index < entryCount)
-            {
-                return entries[index];
-            }
-            return null;
-        }
-
-        public int getId(int index)
-        {
-            if (index < entryCount)
-            {
-                return ids[index];
-            }
-            return -1;
-        }
-
-        /// <summary>
-        /// eliminate null entries, move all entries to the start of the source node
-        /// </summary>
-        internal void reorganize(RTree<T> rtree)
-        {
-            int countdownIndex = rtree.maxNodeEntries - 1;
-            for (int index = 0; index < entryCount; index++)
-            {
-                if (entries[index] == null)
-                {
-                    while (entries[countdownIndex] == null && countdownIndex > index)
-                    {
-                        countdownIndex--;
-                    }
-                    entries[index] = entries[countdownIndex];
-                    ids[index] = ids[countdownIndex];
-                    entries[countdownIndex] = null;
-                }
-            }
-        }
-
-        internal bool isLeaf()
-        {
-            return (level == 1);
-        }
-
-        public int getLevel()
-        {
-            return level;
-        }
-
-        public Rectangle getMBR()
-        {
-            return mbr;
+            mbr.Add(r);
         }
     }
 
+    internal void AddEntryNoCopy(Rectangle r, int id)
+    {
+        ids[entryCount] = id;
+        entries[entryCount] = r;
+        entryCount++;
+        if (mbr == null)
+        {
+            mbr = r.Copy();
+        }
+        else
+        {
+            mbr.Add(r);
+        }
+    }
+
+    /// <summary>
+    /// Return the index of the found entry, or -1 if not found
+    /// </summary>
+    internal int FindEntry(Rectangle r, int id)
+    {
+        for (var i = 0; i < entryCount; i++)
+        {
+            if (id == ids[i] && r.Equals(entries[i]))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// delete entry. This is done by setting it to null and copying the last entry into its space.
+    /// </summary>
+    internal void DeleteEntry(int i, int minNodeEntries)
+    {
+        var lastIndex = entryCount - 1;
+        var deletedRectangle = entries[i];
+        entries[i] = null;
+        if (i != lastIndex)
+        {
+            entries[i] = entries[lastIndex];
+            ids[i] = ids[lastIndex];
+            entries[lastIndex] = null;
+        }
+        entryCount--;
+
+        // if there are at least minNodeEntries, adjust the MBR.
+        // otherwise, don't bother, as the Node<T> will be 
+        // eliminated anyway.
+        if (entryCount >= minNodeEntries)
+        {
+            RecalculateMbr(deletedRectangle);
+        }
+    }
+
+    /// <summary>
+    /// oldRectangle is a rectangle that has just been deleted or made smaller.
+    /// Thus, the MBR is only recalculated if the OldRectangle influenced the old MBR
+    /// </summary>
+    internal void RecalculateMbr(Rectangle deletedRectangle)
+    {
+        if (!mbr.EdgeOverlaps(deletedRectangle)) 
+            return;
+        
+        mbr.Set(entries[0].min, entries[0].max);
+
+        for (var i = 1; i < entryCount; i++)
+        {
+            mbr.Add(entries[i]);
+        }
+    }
+
+    internal Rectangle GetEntry(int index)
+    {
+        return index < entryCount ? entries[index] : null;
+    }
+
+    /// <summary>
+    /// eliminate null entries, move all entries to the start of the source node
+    /// </summary>
+    internal void Reorganize(RTree<T> rtree)
+    {
+        var countdownIndex = rtree.maxNodeEntries - 1;
+        for (var index = 0; index < entryCount; index++)
+        {
+            if (entries[index] != null) 
+                continue;
+            
+            while (entries[countdownIndex] == null && countdownIndex > index)
+            {
+                countdownIndex--;
+            }
+            entries[index] = entries[countdownIndex];
+            ids[index] = ids[countdownIndex];
+            entries[countdownIndex] = null;
+        }
+    }
+
+    internal bool IsLeaf()
+    {
+        return (level == 1);
+    }
+
+    internal Rectangle GetMbr()
+    {
+        return mbr;
+    }
 }
