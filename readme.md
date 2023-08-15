@@ -1,3 +1,10 @@
+A fork of https://github.com/drorgl/cspatialindexrt, specifically tuned for 2D usage with integer coordinates. My typical uses for R-trees are high-performance scenarios and I needed a version of this library that didn't run overhead for the third dimension and floating-point arithmetic. Maybe somebody else can find these modifications useful as well.
+
+---
+
+# Original readme:
+
+
 C# Porting from https://sourceforge.net/projects/jsi/
 
 Basic usage
