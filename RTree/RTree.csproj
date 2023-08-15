@@ -6,7 +6,7 @@
     <Copyright>Infomatiq Limited, Aled Morris</Copyright>
     <Authors>Dror Gluska, Lojemiru</Authors>
     <Company />
-    <Description>A fork of Dror Gluska's RTree library, pared down to two dimensions and updated to use modern .NET Core.</Description>
+    <Description>A fork of Dror Gluska's RTree library, pared down to two dimensions and updated to use .NET 7.0.</Description>
     <PackageProjectUrl>https://github.com/Lojemiru/2D-RTree</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Lojemiru/2D-RTree</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
