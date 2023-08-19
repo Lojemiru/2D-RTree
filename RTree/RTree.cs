@@ -636,15 +636,15 @@ public class RTree<T>
 
         for (int d = 0; d < Rectangle.DIMENSIONS; d++)
         {
-            float tempHighestLow = newRect.min[d];
+            float tempHighestLow = newRect.Min[d];
             int tempHighestLowIndex = -1; // -1 indicates the new rectangle is the seed
 
-            float tempLowestHigh = newRect.max[d];
+            float tempLowestHigh = newRect.Max[d];
             int tempLowestHighIndex = -1;
 
             for (int i = 0; i < n.EntryCount; i++)
             {
-                float tempLow = n.Entries[i].min[d];
+                float tempLow = n.Entries[i].Min[d];
                 if (tempLow >= tempHighestLow)
                 {
                     tempHighestLow = tempLow;
@@ -652,7 +652,7 @@ public class RTree<T>
                 }
                 else
                 {  // ensure that the same index cannot be both lowestHigh and highestLow
-                    float tempHigh = n.Entries[i].max[d];
+                    float tempHigh = n.Entries[i].Max[d];
                     if (tempHigh <= tempLowestHigh)
                     {
                         tempLowestHigh = tempHigh;
@@ -663,7 +663,7 @@ public class RTree<T>
                 // PS2 [Adjust for shape of the rectangle cluster] Normalize the separations
                 // by dividing by the widths of the entire set along the corresponding
                 // dimension
-                float normalizedSeparation = (tempHighestLow - tempLowestHigh) / (n.Mbr.max[d] - n.Mbr.min[d]);
+                float normalizedSeparation = (tempHighestLow - tempLowestHigh) / (n.Mbr.Max[d] - n.Mbr.Min[d]);
 
                 // PS3 [Select the most extreme pair] Choose the pair with the greatest
                 // normalized separation along any dimension.
@@ -699,7 +699,7 @@ public class RTree<T>
 
         entryStatus[lowestHighIndex] = ENTRY_STATUS_ASSIGNED;
         n.EntryCount = 1;
-        n.Mbr.set(n.Entries[lowestHighIndex].min, n.Entries[lowestHighIndex].max);
+        n.Mbr.set(n.Entries[lowestHighIndex].Min, n.Entries[lowestHighIndex].Max);
     }
 
 
@@ -895,8 +895,8 @@ public class RTree<T>
                 // adjust EnI to tightly contain all entries in N
                 if (!n.Mbr.Equals(parent.Entries[parentEntry]))
                 {
-                    oldRectangle.set(parent.Entries[parentEntry].min, parent.Entries[parentEntry].max);
-                    parent.Entries[parentEntry].set(n.Mbr.min, n.Mbr.max);
+                    oldRectangle.set(parent.Entries[parentEntry].Min, parent.Entries[parentEntry].Max);
+                    parent.Entries[parentEntry].set(n.Mbr.Min, n.Mbr.Max);
                     parent.RecalculateMbr(oldRectangle);
                 }
             }
@@ -989,8 +989,8 @@ public class RTree<T>
 
             if (!parent.Entries[entry].Equals(n.Mbr))
             {
-                parent.Entries[entry].set(n.Mbr.min, n.Mbr.max);
-                parent.Mbr.set(parent.Entries[0].min, parent.Entries[0].max);
+                parent.Entries[entry].set(n.Mbr.Min, n.Mbr.Max);
+                parent.Mbr.set(parent.Entries[0].Min, parent.Entries[0].Max);
                 for (int i = 1; i < parent.EntryCount; i++)
                 {
                     parent.Mbr.add(parent.Entries[i]);

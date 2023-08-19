@@ -23,19 +23,18 @@ namespace RTree;
 /// <summary>
 /// Currently hardcoded to 2 dimensions, but could be extended.
 /// </summary>
-public class Point
+public sealed class Point
 {
     /// <summary>
     /// Number of dimensions in a point. In theory this
-    /// could be exended to three or more dimensions.
+    /// could be extended to three or more dimensions.
     /// </summary>
     private const int DIMENSIONS = 2;
 
     /// <summary>
     /// The (x, y) coordinates of the point.
     /// </summary>
-    internal int[] coordinates;
-
+    internal readonly int[] Coordinates;
 
     /// <summary>
     /// Constructor.
@@ -45,21 +44,18 @@ public class Point
     /// <param name="z">The z coordinate of the point</param>
     public Point(int x, int y)
     {
-        coordinates = new int[DIMENSIONS];
-        coordinates[0] = x;
-        coordinates[1] = y;
+        Coordinates = new int[DIMENSIONS];
+        Coordinates[0] = x;
+        Coordinates[1] = y;
     }
 
     /// <summary>
     /// retrieve coordinate from point
     /// <para>probable dimensions:</para>
-    /// <para>X = 0, Y = 1, Z = 2</para>
+    /// <para>X = 0, Y = 1</para>
     /// </summary>
-    public int? get(int dimension)
+    public int? Get(int dimension)
     {
-        if (coordinates.Length >= dimension)
-            return coordinates[dimension];
-
-        return null;
+        return Coordinates.Length >= dimension ? Coordinates[dimension] : null;
     }
 }

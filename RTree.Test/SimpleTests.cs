@@ -68,14 +68,14 @@ namespace RTree.Test
         {
             var bounds = Instance.getBounds();
             //X
-            Assert.AreEqual(0, bounds.get(0).Value.min);
-            Assert.AreEqual(3, bounds.get(0).Value.max);
+            Assert.AreEqual(0, bounds.get(0).Value.Min);
+            Assert.AreEqual(3, bounds.get(0).Value.Max);
             //Y
-            Assert.AreEqual(0, bounds.get(1).Value.min);
-            Assert.AreEqual(3, bounds.get(1).Value.max);
+            Assert.AreEqual(0, bounds.get(1).Value.Min);
+            Assert.AreEqual(3, bounds.get(1).Value.Max);
             //Z
-            Assert.AreEqual(0, bounds.get(2).Value.min);
-            Assert.AreEqual(3, bounds.get(2).Value.max);
+            Assert.AreEqual(0, bounds.get(2).Value.Min);
+            Assert.AreEqual(3, bounds.get(2).Value.Max);
         }
 
         [TestMethod]

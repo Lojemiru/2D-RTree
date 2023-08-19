@@ -24,33 +24,26 @@ using System.Text;
 
 namespace RTree;
 
-public struct dimension
-{
-    public int max;
-    public int min;
-}
-
-
 /// <summary>
 /// Currently hardcoded to 2 dimensions, but could be extended.
 /// </summary>
-public class Rectangle
+public sealed class Rectangle
 {
     /// <summary>
     /// Number of dimensions in a rectangle. In theory this
-    /// could be exended to three or more dimensions.
+    /// could be extended to three or more dimensions.
     /// </summary>
     internal const int DIMENSIONS = 2;
 
     /// <summary>
     /// array containing the minimum value for each dimension; ie { min(x), min(y) }
     /// </summary>
-    internal int[] max;
+    internal readonly int[] Max;
 
     /// <summary>
     /// array containing the maximum value for each dimension; ie { max(x), max(y) }
     /// </summary>
-    internal int[] min;
+    internal readonly int[] Min;
 
     /// <summary>
     /// ctor
@@ -61,8 +54,8 @@ public class Rectangle
     /// <param name="y2">coordinate of the opposite corner</param>
     public Rectangle(int x1, int y1, int x2, int y2)
     {
-        min = new int[DIMENSIONS];
-        max = new int[DIMENSIONS];
+        Min = new int[DIMENSIONS];
+        Max = new int[DIMENSIONS];
         set(x1, y1, x2, y2);
     }
 
@@ -79,8 +72,8 @@ public class Rectangle
                                 "min and max arrays must be of length " + DIMENSIONS);
         }
 
-        this.min = new int[DIMENSIONS];
-        this.max = new int[DIMENSIONS];
+        Min = new int[DIMENSIONS];
+        Max = new int[DIMENSIONS];
 
         set(min, max);
     }
@@ -94,10 +87,10 @@ public class Rectangle
     /// <param name="y2">coordinate of the opposite corner</param>
     internal void set(int x1, int y1, int x2, int y2)
     {
-        min[0] = Math.Min(x1, x2);
-        min[1] = Math.Min(y1, y2);
-        max[0] = Math.Max(x1, x2);
-        max[1] = Math.Max(y1, y2);
+        Min[0] = Math.Min(x1, x2);
+        Min[1] = Math.Min(y1, y2);
+        Max[0] = Math.Max(x1, x2);
+        Max[1] = Math.Max(y1, y2);
     }
 
     /// <summary>
@@ -105,13 +98,13 @@ public class Rectangle
     /// <para>probable dimensions:</para>
     /// <para>X = 0, Y = 1, Z = 2</para>
     /// </summary>
-    public dimension? get(int dimension)
+    public Dimension? get(int dimension)
     {
-        if ((min.Length >= dimension) && (max.Length >= dimension))
+        if ((Min.Length >= dimension) && (Max.Length >= dimension))
         {
-            dimension retval = new dimension();
-            retval.min = min[dimension];
-            retval.max = max[dimension];
+            Dimension retval = new Dimension();
+            retval.Min = Min[dimension];
+            retval.Max = Max[dimension];
             return retval;
         }
         return null;
@@ -124,8 +117,8 @@ public class Rectangle
     /// <param name="max">max array containing the maximum value for each dimension; ie { max(x), max(y) }</param>
     internal void set(int[] min, int[] max)
     {
-        System.Array.Copy(min, 0, this.min, 0, DIMENSIONS);
-        System.Array.Copy(max, 0, this.max, 0, DIMENSIONS);
+        Array.Copy(min, 0, this.Min, 0, DIMENSIONS);
+        Array.Copy(max, 0, this.Max, 0, DIMENSIONS);
     }
 
 
@@ -135,7 +128,7 @@ public class Rectangle
     /// <returns>copy of this rectangle</returns>
     internal Rectangle copy()
     {
-        return new Rectangle(min, max);
+        return new Rectangle(Min, Max);
     }
 
     /// <summary>
@@ -144,9 +137,9 @@ public class Rectangle
     /// </summary>
     internal bool edgeOverlaps(Rectangle r)
     {
-        for (int i = 0; i < DIMENSIONS; i++)
+        for (var i = 0; i < DIMENSIONS; i++)
         {
-            if (min[i] == r.min[i] || max[i] == r.max[i])
+            if (Min[i] == r.Min[i] || Max[i] == r.Max[i])
             {
                 return true;
             }
@@ -163,9 +156,9 @@ public class Rectangle
     {
         // Every dimension must intersect. If any dimension
         // does not intersect, return false immediately.
-        for (int i = 0; i < DIMENSIONS; i++)
+        for (var i = 0; i < DIMENSIONS; i++)
         {
-            if (max[i] < r.min[i] || min[i] > r.max[i])
+            if (Max[i] < r.Min[i] || Min[i] > r.Max[i])
             {
                 return false;
             }
@@ -180,9 +173,9 @@ public class Rectangle
     /// <returns>true if this rectangle contains the passed rectangle, false if it does not</returns>
     internal bool contains(Rectangle r)
     {
-        for (int i = 0; i < DIMENSIONS; i++)
+        for (var i = 0; i < DIMENSIONS; i++)
         {
-            if (max[i] < r.max[i] || min[i] > r.min[i])
+            if (Max[i] < r.Max[i] || Min[i] > r.Min[i])
             {
                 return false;
             }
@@ -197,9 +190,9 @@ public class Rectangle
     /// <returns>true if the passed rectangle contains this rectangle, false if it does not</returns>
     internal bool containedBy(Rectangle r)
     {
-        for (int i = 0; i < DIMENSIONS; i++)
+        for (var i = 0; i < DIMENSIONS; i++)
         {
-            if (max[i] > r.max[i] || min[i] < r.min[i])
+            if (Max[i] > r.Max[i] || Min[i] < r.Min[i])
             {
                 return false;
             }
@@ -213,14 +206,14 @@ public class Rectangle
     /// If the rectangle contains the point, the distance is zero.
     /// </summary>
     /// <param name="p">Point to find the distance to</param>
-    /// <returns>distance beween this rectangle and the passed point.</returns>
+    /// <returns>distance between this rectangle and the passed point.</returns>
     internal int distance(Point p)
     {
-        int distanceSquared = 0;
-        for (int i = 0; i < DIMENSIONS; i++)
+        var distanceSquared = 0;
+        for (var i = 0; i < DIMENSIONS; i++)
         {
-            int greatestMin = Math.Max(min[i], p.coordinates[i]);
-            int leastMax = Math.Min(max[i], p.coordinates[i]);
+            var greatestMin = Math.Max(Min[i], p.Coordinates[i]);
+            var leastMax = Math.Min(Max[i], p.Coordinates[i]);
             if (greatestMin > leastMax)
             {
                 distanceSquared += ((greatestMin - leastMax) * (greatestMin - leastMax));
@@ -237,11 +230,11 @@ public class Rectangle
     /// <returns>distance between this rectangle and the passed rectangle</returns>
     internal int distance(Rectangle r)
     {
-        int distanceSquared = 0;
-        for (int i = 0; i < DIMENSIONS; i++)
+        var distanceSquared = 0;
+        for (var i = 0; i < DIMENSIONS; i++)
         {
-            int greatestMin = Math.Max(min[i], r.min[i]);
-            int leastMax = Math.Min(max[i], r.max[i]);
+            var greatestMin = Math.Max(Min[i], r.Min[i]);
+            var leastMax = Math.Min(Max[i], r.Max[i]);
             if (greatestMin > leastMax)
             {
                 distanceSquared += ((greatestMin - leastMax) * (greatestMin - leastMax));
@@ -255,16 +248,16 @@ public class Rectangle
     /// </summary>
     internal int distanceSquared(int dimension, int point)
     {
-        int distanceSquared = 0;
-        int tempDistance = point - max[dimension];
-        for (int i = 0; i < 2; i++)
+        var distanceSquared = 0;
+        var tempDistance = point - Max[dimension];
+        for (var i = 0; i < 2; i++)
         {
             if (tempDistance > 0)
             {
                 distanceSquared = (tempDistance * tempDistance);
                 break;
             }
-            tempDistance = min[dimension] - point;
+            tempDistance = Min[dimension] - point;
         }
         return distanceSquared;
     }
@@ -278,11 +271,11 @@ public class Rectangle
         //Find the distance between this rectangle and each corner of the
         //passed rectangle, and use the maximum.
 
-        int distanceSquared = 0;
+        var distanceSquared = 0;
 
         for (int i = 0; i < DIMENSIONS; i++)
         {
-            distanceSquared += Math.Max(r.min[i], r.max[i]);
+            distanceSquared += Math.Max(r.Min[i], r.Max[i]);
 #warning possible didn't convert properly
             //distanceSquared += Math.Max(distanceSquared(i, r.min[i]), distanceSquared(i, r.max[i]));
         }
@@ -301,8 +294,8 @@ public class Rectangle
     /// </param>
     internal int enlargement(Rectangle r)
     {
-        int enlargedArea = (Math.Max(max[0], r.max[0]) - Math.Min(min[0], r.min[0])) *
-                           (Math.Max(max[1], r.max[1]) - Math.Min(min[1], r.min[1]));
+        var enlargedArea = (Math.Max(Max[0], r.Max[0]) - Math.Min(Min[0], r.Min[0])) *
+                           (Math.Max(Max[1], r.Max[1]) - Math.Min(Min[1], r.Min[1]));
 
         return enlargedArea - area();
     }
@@ -313,7 +306,7 @@ public class Rectangle
     /// <returns> The area of this rectangle</returns>
     internal int area()
     {
-        return (max[0] - min[0]) * (max[1] - min[1]);
+        return (Max[0] - Min[0]) * (Max[1] - Min[1]);
     }
 
 
@@ -324,15 +317,15 @@ public class Rectangle
     /// <param name="r">Rectangle to add to this rectangle</param>
     internal void add(Rectangle r)
     {
-        for (int i = 0; i < DIMENSIONS; i++)
+        for (var i = 0; i < DIMENSIONS; i++)
         {
-            if (r.min[i] < min[i])
+            if (r.Min[i] < Min[i])
             {
-                min[i] = r.min[i];
+                Min[i] = r.Min[i];
             }
-            if (r.max[i] > max[i])
+            if (r.Max[i] > Max[i])
             {
-                max[i] = r.max[i];
+                Max[i] = r.Max[i];
             }
         }
     }
@@ -344,12 +337,12 @@ public class Rectangle
     /// <param name="r">The rectangle to union with this rectangle</param>
     internal Rectangle union(Rectangle r)
     {
-        Rectangle union = this.copy();
+        var union = copy();
         union.add(r);
         return union;
     }
 
-    internal bool CompareArrays(int[] a1, int[] a2)
+    private static bool CompareArrays(int[] a1, int[] a2)
     {
         if ((a1 == null) || (a2 == null))
             return false;
@@ -370,12 +363,12 @@ public class Rectangle
     /// <returns></returns>
     public override bool Equals(object obj)
     {
-        bool equals = false;
-        if (obj.GetType() == typeof(Rectangle))
+        var equals = false;
+        if (obj is Rectangle)
         {
             Rectangle r = (Rectangle)obj;
 #warning possible didn't convert properly
-            if (CompareArrays(r.min, min) && CompareArrays(r.max, max))
+            if (CompareArrays(r.Min, Min) && CompareArrays(r.Max, Max))
             {
                 equals = true;
             }
@@ -386,7 +379,7 @@ public class Rectangle
 
     public override int GetHashCode()
     {
-        return this.ToString().GetHashCode();
+        return ToString().GetHashCode();
     }
 
 
@@ -413,28 +406,28 @@ public class Rectangle
     /// </summary>
     public override string ToString()
     {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
 
         // min coordinates
         sb.Append('(');
-        for (int i = 0; i < DIMENSIONS; i++)
+        for (var i = 0; i < DIMENSIONS; i++)
         {
             if (i > 0)
             {
                 sb.Append(", ");
             }
-            sb.Append(min[i]);
+            sb.Append(Min[i]);
         }
         sb.Append("), (");
 
         // max coordinates
-        for (int i = 0; i < DIMENSIONS; i++)
+        for (var i = 0; i < DIMENSIONS; i++)
         {
             if (i > 0)
             {
                 sb.Append(", ");
             }
-            sb.Append(max[i]);
+            sb.Append(Max[i]);
         }
         sb.Append(')');
         return sb.ToString();

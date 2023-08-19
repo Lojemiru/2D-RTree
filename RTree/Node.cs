@@ -121,7 +121,7 @@ internal class Node<T>
         if (!Mbr.edgeOverlaps(deletedRectangle)) 
             return;
         
-        Mbr.set(Entries[0].min, Entries[0].max);
+        Mbr.set(Entries[0].Min, Entries[0].Max);
 
         for (var i = 1; i < EntryCount; i++)
         {
