@@ -18,50 +18,48 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 
 // Ported to C# By Dror Gluska, April 9th, 2009
-namespace RTree
+namespace RTree;
+
+/// <summary>
+/// Currently hardcoded to 2 dimensions, but could be extended.
+/// </summary>
+public class Point
 {
+    /// <summary>
+    /// Number of dimensions in a point. In theory this
+    /// could be exended to three or more dimensions.
+    /// </summary>
+    private const int DIMENSIONS = 2;
 
     /// <summary>
-    /// Currently hardcoded to 2 dimensions, but could be extended.
+    /// The (x, y) coordinates of the point.
     /// </summary>
-    public class Point
+    internal int[] coordinates;
+
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    /// <param name="x">The x coordinate of the point</param>
+    /// <param name="y">The y coordinate of the point</param>
+    /// <param name="z">The z coordinate of the point</param>
+    public Point(int x, int y)
     {
-        /// <summary>
-        /// Number of dimensions in a point. In theory this
-        /// could be exended to three or more dimensions.
-        /// </summary>
-        private const int DIMENSIONS = 2;
+        coordinates = new int[DIMENSIONS];
+        coordinates[0] = x;
+        coordinates[1] = y;
+    }
 
-        /// <summary>
-        /// The (x, y) coordinates of the point.
-        /// </summary>
-        internal int[] coordinates;
+    /// <summary>
+    /// retrieve coordinate from point
+    /// <para>probable dimensions:</para>
+    /// <para>X = 0, Y = 1, Z = 2</para>
+    /// </summary>
+    public int? get(int dimension)
+    {
+        if (coordinates.Length >= dimension)
+            return coordinates[dimension];
 
-
-        /// <summary>
-        /// Constructor.
-        /// </summary>
-        /// <param name="x">The x coordinate of the point</param>
-        /// <param name="y">The y coordinate of the point</param>
-        /// <param name="z">The z coordinate of the point</param>
-        public Point(int x, int y)
-        {
-            coordinates = new int[DIMENSIONS];
-            coordinates[0] = x;
-            coordinates[1] = y;
-        }
-
-        /// <summary>
-        /// retrieve coordinate from point
-        /// <para>probable dimensions:</para>
-        /// <para>X = 0, Y = 1, Z = 2</para>
-        /// </summary>
-        public int? get(int dimension)
-        {
-            if (coordinates.Length >= dimension)
-                return coordinates[dimension];
-
-            return null;
-        }
+        return null;
     }
 }
