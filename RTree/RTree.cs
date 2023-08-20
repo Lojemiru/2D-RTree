@@ -47,40 +47,40 @@ namespace RTree;
 /// <typeparam name="T"></typeparam>
 public sealed class RTree<T>
 {
-    private const int locking_timeout = 10000;
+    private const int LOCKING_TIMEOUT = 10000;
 
-    private ReaderWriterLock locker = new ReaderWriterLock();
-    private const string version = "1.0b2p2";
+    private readonly ReaderWriterLock locker = new();
+    private const string VERSION = "1.0.0";
 
     // parameters of the tree
     private const int DEFAULT_MAX_NODE_ENTRIES = 10;
-    internal int maxNodeEntries;
-    int minNodeEntries;
+    internal int MaxNodeEntries;
+    private int minNodeEntries;
 
     // map of nodeId -&gt; Node&lt;T&gt; object
     // [x] TODO eliminate this map - it should not be needed. Nodes
     // can be found by traversing the tree.
     //private TIntObjectHashMap nodeMap = new TIntObjectHashMap();
-    private Dictionary<int, Node<T>> nodeMap = new Dictionary<int, Node<T>>();
+    private readonly Dictionary<int, Node<T>> nodeMap = new();
 
     // used to mark the status of entries during a Node&lt;T&gt; split
     private const int ENTRY_STATUS_ASSIGNED = 0;
     private const int ENTRY_STATUS_UNASSIGNED = 1;
-    private byte[] entryStatus = null;
-    private byte[] initialEntryStatus = null;
+    private byte[] entryStatus;
+    private byte[] initialEntryStatus;
 
     // stacks used to store nodeId and entry index of each Node&lt;T&gt;
     // from the root down to the leaf. Enables fast lookup
     // of nodes when a split is propagated up the tree.
     //private TIntStack parents = new TIntStack();
-    private Stack<int> parents = new Stack<int>();
+    private readonly Stack<int> parents = new();
     //private TIntStack parentsEntry = new TIntStack();
-    private Stack<int> parentsEntry = new Stack<int>();
+    private readonly Stack<int> parentsEntry = new();
 
     // initialisation
     private int treeHeight = 1; // leaves are always level 1
     private int rootNodeId = 0;
-    private int msize = 0;
+    private int mSize = 0;
 
     // Enables creation of new nodes
     //private int highestUsedNodeId = rootNodeId; 
@@ -90,7 +90,7 @@ public sealed class RTree<T>
     // so that they can be reused. Store the IDs of nodes
     // which can be reused.
     //private TIntStack deletedNodeIds = new TIntStack();
-    private Stack<int> deletedNodeIds = new Stack<int>();
+    private readonly Stack<int> deletedNodeIds = new();
 
     // List of nearest rectangles. Use a member variable to
     // avoid recreating the object each time nearest() is called.
@@ -99,61 +99,61 @@ public sealed class RTree<T>
 
     //Added dictionaries to support generic objects..
     //possibility to change the code to support objects without dictionaries.
-    private Dictionary<int, T> IdsToItems = new Dictionary<int, T>();
-    private Dictionary<T, int> ItemsToIds = new Dictionary<T, int>();
-    private volatile int idcounter = int.MinValue;
+    private readonly Dictionary<int, T> idsToItems = new();
+    private readonly Dictionary<T, int> itemsToIds = new();
+    private volatile int idCounter = int.MinValue;
 
     /// <summary>
     /// Initialize implementation dependent properties of the RTree.
     /// </summary>
     public RTree()
     {
-        init();
+        Init();
     }
 
     /// <summary>
     /// Initialize implementation dependent properties of the RTree.
     /// </summary>
-    /// <param name="MaxNodeEntries">his specifies the maximum number of entries
+    /// <param name="maxNodeEntries">his specifies the maximum number of entries
     ///in a node. The default value is 10, which is used if the property is
     ///not specified, or is less than 2.</param>
-    /// <param name="MinNodeEntries">This specifies the minimum number of entries
+    /// <param name="minNodeEntries">This specifies the minimum number of entries
     ///in a node. The default value is half of the MaxNodeEntries value (rounded
     ///down), which is used if the property is not specified or is less than 1.
     ///</param>
-    public RTree(int MaxNodeEntries, int MinNodeEntries)
+    public RTree(int maxNodeEntries, int minNodeEntries)
     {
-        minNodeEntries = MinNodeEntries;
-        maxNodeEntries = MaxNodeEntries;
-        init();
+        this.minNodeEntries = minNodeEntries;
+        this.MaxNodeEntries = maxNodeEntries;
+        Init();
     }
 
-    private void init()
+    private void Init()
     {
-        locker.AcquireWriterLock(locking_timeout);
+        locker.AcquireWriterLock(LOCKING_TIMEOUT);
         // Obviously a Node&lt;T&gt; with less than 2 entries cannot be split.
         // The Node&lt;T&gt; splitting algorithm will work with only 2 entries
         // per node, but will be inefficient.
-        if (maxNodeEntries < 2)
+        if (MaxNodeEntries < 2)
         {
-            maxNodeEntries = DEFAULT_MAX_NODE_ENTRIES;
+            MaxNodeEntries = DEFAULT_MAX_NODE_ENTRIES;
         }
 
         // The MinNodeEntries must be less than or equal to (int) (MaxNodeEntries / 2)
-        if (minNodeEntries < 1 || minNodeEntries > maxNodeEntries / 2)
+        if (minNodeEntries < 1 || minNodeEntries > MaxNodeEntries / 2)
         {
-            minNodeEntries = maxNodeEntries / 2;
+            minNodeEntries = MaxNodeEntries / 2;
         }
 
-        entryStatus = new byte[maxNodeEntries];
-        initialEntryStatus = new byte[maxNodeEntries];
+        entryStatus = new byte[MaxNodeEntries];
+        initialEntryStatus = new byte[MaxNodeEntries];
 
-        for (int i = 0; i < maxNodeEntries; i++)
+        for (var i = 0; i < MaxNodeEntries; i++)
         {
             initialEntryStatus[i] = ENTRY_STATUS_UNASSIGNED;
         }
 
-        Node<T> root = new Node<T>(rootNodeId, 1, maxNodeEntries);
+        var root = new Node<T>(rootNodeId, 1, MaxNodeEntries);
         nodeMap.Add(rootNodeId, root);
             
         locker.ReleaseWriterLock();
@@ -166,23 +166,23 @@ public sealed class RTree<T>
     /// <param name="item"></param>
     public void Add(Rectangle r, T item)
     {
-        locker.AcquireWriterLock(locking_timeout);
-        idcounter++;
-        int id = idcounter;
+        locker.AcquireWriterLock(LOCKING_TIMEOUT);
+        idCounter++;
+        var id = idCounter;
 
-        IdsToItems.Add(id, item);
-        ItemsToIds.Add(item, id);
+        idsToItems.Add(id, item);
+        itemsToIds.Add(item, id);
 
-        add(r, id);
+        Add(r, id);
         locker.ReleaseWriterLock();
     }
 
-    private void add(Rectangle r, int id)
+    private void Add(Rectangle r, int id)
     {
 
-        add(r.Copy(), id, 1);
+        Add(r.Copy(), id, 1);
 
-        msize++;
+        mSize++;
     }
 
     /// <summary>
@@ -191,43 +191,43 @@ public sealed class RTree<T>
     /// <param name="r"></param>
     /// <param name="id"></param>
     /// <param name="level"></param>
-    private void add(Rectangle r, int id, int level)
+    private void Add(Rectangle r, int id, int level)
     {
         // I1 [Find position for new record] Invoke ChooseLeaf to select a 
         // leaf Node&lt;T&gt; L in which to place r
-        Node<T> n = chooseNode(r, level);
+        var n = ChooseNode(r, level);
         Node<T> newLeaf = null;
 
         // I2 [Add record to leaf node] If L has room for another entry, 
         // install E. Otherwise invoke SplitNode to obtain L and LL containing
         // E and all the old entries of L
-        if (n.EntryCount < maxNodeEntries)
+        if (n.EntryCount < MaxNodeEntries)
         {
             n.AddEntryNoCopy(r, id);
         }
         else
         {
-            newLeaf = splitNode(n, r, id);
+            newLeaf = SplitNode(n, r, id);
         }
 
         // I3 [Propagate changes upwards] Invoke AdjustTree on L, also passing LL
         // if a split was performed
-        Node<T> newNode = adjustTree(n, newLeaf);
+        var newNode = AdjustTree(n, newLeaf);
 
         // I4 [Grow tree taller] If Node&lt;T&gt; split propagation caused the root to 
         // split, create a new root whose children are the two resulting nodes.
-        if (newNode != null)
-        {
-            int oldRootNodeId = rootNodeId;
-            Node<T> oldRoot = getNode(oldRootNodeId);
+        if (newNode == null) 
+            return;
+        
+        var oldRootNodeId = rootNodeId;
+        var oldRoot = GetNode(oldRootNodeId);
 
-            rootNodeId = getNextNodeId();
-            treeHeight++;
-            Node<T> root = new Node<T>(rootNodeId, treeHeight, maxNodeEntries);
-            root.AddEntry(newNode.Mbr, newNode.NodeId);
-            root.AddEntry(oldRoot.Mbr, oldRoot.NodeId);
-            nodeMap.Add(rootNodeId, root);
-        }
+        rootNodeId = GetNextNodeId();
+        treeHeight++;
+        var root = new Node<T>(rootNodeId, treeHeight, MaxNodeEntries);
+        root.AddEntry(newNode.Mbr, newNode.NodeId);
+        root.AddEntry(oldRoot.Mbr, oldRoot.NodeId);
+        nodeMap.Add(rootNodeId, root);
     }
 
     /// <summary>
@@ -238,20 +238,20 @@ public sealed class RTree<T>
     /// <returns></returns>
     public bool Delete(Rectangle r, T item)
     {
-        locker.AcquireWriterLock(locking_timeout);
-        int id = ItemsToIds[item];
+        locker.AcquireWriterLock(LOCKING_TIMEOUT);
+        var id = itemsToIds[item];
 
-        bool success = delete(r, id);
-        if (success == true)
+        var success = InternalDelete(r, id);
+        if (success)
         {
-            IdsToItems.Remove(id);
-            ItemsToIds.Remove(item);
+            idsToItems.Remove(id);
+            itemsToIds.Remove(item);
         }
         locker.ReleaseWriterLock();
         return success;
     }
 
-    private bool delete(Rectangle r, int id)
+    private bool InternalDelete(Rectangle r, int id)
     {
         // FindLeaf algorithm inlined here. Note the "official" algorithm 
         // searches all overlapping entries. This seems inefficient to me, 
@@ -270,27 +270,27 @@ public sealed class RTree<T>
         parentsEntry.Clear();
         parentsEntry.Push(-1);
         Node<T> n = null;
-        int foundIndex = -1;  // index of entry to be deleted in leaf
+        var foundIndex = -1;  // index of entry to be deleted in leaf
 
         while (foundIndex == -1 && parents.Count > 0)
         {
-            n = getNode(parents.Peek());
-            int startIndex = parentsEntry.Peek() + 1;
+            n = GetNode(parents.Peek());
+            var startIndex = parentsEntry.Peek() + 1;
 
             if (!n.IsLeaf())
             {
-                bool contains = false;
-                for (int i = startIndex; i < n.EntryCount; i++)
+                var contains = false;
+                for (var i = startIndex; i < n.EntryCount; i++)
                 {
-                    if (n.Entries[i].Contains(r))
-                    {
-                        parents.Push(n.Ids[i]);
-                        parentsEntry.Pop();
-                        parentsEntry.Push(i); // this becomes the start index when the child has been searched
-                        parentsEntry.Push(-1);
-                        contains = true;
-                        break; // ie go to next iteration of while()
-                    }
+                    if (!n.Entries[i].Contains(r)) 
+                        continue;
+                    
+                    parents.Push(n.Ids[i]);
+                    parentsEntry.Pop();
+                    parentsEntry.Push(i); // this becomes the start index when the child has been searched
+                    parentsEntry.Push(-1);
+                    contains = true;
+                    break; // ie go to next iteration of while()
                 }
                 if (contains)
                 {
@@ -309,19 +309,19 @@ public sealed class RTree<T>
         if (foundIndex != -1)
         {
             n.DeleteEntry(foundIndex, minNodeEntries);
-            condenseTree(n);
-            msize--;
+            CondenseTree(n);
+            mSize--;
         }
 
         // shrink the tree if possible (i.e. if root Node&lt;T%gt; has exactly one entry,and that 
         // entry is not a leaf node, delete the root (it's entry becomes the new root)
-        Node<T> root = getNode(rootNodeId);
+        var root = GetNode(rootNodeId);
         while (root.EntryCount == 1 && treeHeight > 1)
         {
             root.EntryCount = 0;
             rootNodeId = root.Ids[0];
             treeHeight--;
-            root = getNode(rootNodeId);
+            root = GetNode(rootNodeId);
         }
 
         return (foundIndex != -1);
@@ -335,27 +335,28 @@ public sealed class RTree<T>
     /// <returns>List of items</returns>
     public List<T> Nearest(Point p, float furthestDistance)
     {
-        List<T> retval = new List<T>();
-        locker.AcquireReaderLock(locking_timeout);
-        nearest(p,  (int id)=>
+        var retval = new List<T>();
+        locker.AcquireReaderLock(LOCKING_TIMEOUT);
+        Nearest(p,  (id) =>
         {
-            retval.Add(IdsToItems[id]);
+            retval.Add(idsToItems[id]);
         }, furthestDistance);
         locker.ReleaseReaderLock();
         return retval;
     }
 
 
-    private void nearest(Point p, Action<int> v, float furthestDistance)
+    private void Nearest(Point p, Action<int> v, float furthestDistance)
     {
-        Node<T> rootNode = getNode(rootNodeId);
+        var rootNode = GetNode(rootNodeId);
 
-        List<int> nearestIds = new List<int>();
+        var nearestIds = new List<int>();
 
-        nearest(p, rootNode, nearestIds, furthestDistance);
+        Nearest(p, rootNode, nearestIds, furthestDistance);
 
-        foreach (int id in nearestIds)
+        foreach (var id in nearestIds)
             v(id);
+        
         nearestIds.Clear();
     }
 
@@ -366,21 +367,21 @@ public sealed class RTree<T>
     /// <returns></returns>
     public List<T> Intersects(Rectangle r)
     {
-        List<T> retval = new List<T>();
-        locker.AcquireReaderLock(locking_timeout);
-        intersects(r, (int id)=>
+        var retval = new List<T>();
+        locker.AcquireReaderLock(LOCKING_TIMEOUT);
+        Intersects(r, (int id)=>
         {
-            retval.Add(IdsToItems[id]);
+            retval.Add(idsToItems[id]);
         });
         locker.ReleaseReaderLock();
         return retval;
     }
 
 
-    private void intersects(Rectangle r, Action<int> v)
+    private void Intersects(Rectangle r, Action<int> v)
     {
-        Node<T> rootNode = getNode(rootNodeId);
-        intersects(r, v, rootNode);
+        var rootNode = GetNode(rootNodeId);
+        Intersects(r, v, rootNode);
     }
 
     /// <summary>
@@ -390,22 +391,22 @@ public sealed class RTree<T>
     /// <returns></returns>
     public List<T> Contains(Rectangle r)
     {
-        List<T> retval = new List<T>();
-        locker.AcquireReaderLock(locking_timeout);
-        contains(r, (int id)=>
+        var retval = new List<T>();
+        locker.AcquireReaderLock(LOCKING_TIMEOUT);
+        Contains(r, (id) =>
         {
-            retval.Add(IdsToItems[id]);
+            retval.Add(idsToItems[id]);
         });
 
         locker.ReleaseReaderLock();
         return retval;
     }
 
-    private void contains(Rectangle r, Action<int> v)
+    private void Contains(Rectangle r, Action<int> v)
     {
-        Stack<int> _parents = new Stack<int>();
+        var _parents = new Stack<int>();
         //private TIntStack parentsEntry = new TIntStack();
-        Stack<int> _parentsEntry = new Stack<int>();
+        var _parentsEntry = new Stack<int>();
 
 
         // find all rectangles in the tree that are contained by the passed rectangle
@@ -422,26 +423,26 @@ public sealed class RTree<T>
 
         while (_parents.Count > 0)
         {
-            Node<T> n = getNode(_parents.Peek());
-            int startIndex = _parentsEntry.Peek() + 1;
+            var n = GetNode(_parents.Peek());
+            var startIndex = _parentsEntry.Peek() + 1;
 
             if (!n.IsLeaf())
             {
                 // go through every entry in the index Node<T> to check
                 // if it intersects the passed rectangle. If so, it 
                 // could contain entries that are contained.
-                bool intersects = false;
-                for (int i = startIndex; i < n.EntryCount; i++)
+                var intersects = false;
+                for (var i = startIndex; i < n.EntryCount; i++)
                 {
-                    if (r.Intersects(n.Entries[i]))
-                    {
-                        _parents.Push(n.Ids[i]);
-                        _parentsEntry.Pop();
-                        _parentsEntry.Push(i); // this becomes the start index when the child has been searched
-                        _parentsEntry.Push(-1);
-                        intersects = true;
-                        break; // ie go to next iteration of while()
-                    }
+                    if (!r.Intersects(n.Entries[i])) 
+                        continue;
+                    
+                    _parents.Push(n.Ids[i]);
+                    _parentsEntry.Pop();
+                    _parentsEntry.Push(i); // this becomes the start index when the child has been searched
+                    _parentsEntry.Push(-1);
+                    intersects = true;
+                    break; // ie go to next iteration of while()
                 }
                 if (intersects)
                 {
@@ -452,7 +453,7 @@ public sealed class RTree<T>
             {
                 // go through every entry in the leaf to check if 
                 // it is contained by the passed rectangle
-                for (int i = 0; i < n.EntryCount; i++)
+                for (var i = 0; i < n.EntryCount; i++)
                 {
                     if (r.Contains(n.Entries[i]))
                     {
@@ -468,12 +469,12 @@ public sealed class RTree<T>
     /// <summary>
     /// Returns the bounds of all the entries in the spatial index, or null if there are no entries.
     /// </summary>
-    public Rectangle getBounds()
+    public Rectangle GetBounds()
     {
         Rectangle bounds = null;
 
-        locker.AcquireReaderLock(locking_timeout);
-        Node<T> n = getNode(getRootNodeId());
+        locker.AcquireReaderLock(LOCKING_TIMEOUT);
+        Node<T> n = GetNode(GetRootNodeId());
         if (n != null && n.Mbr != null)
         {
             bounds = n.Mbr.Copy();
@@ -485,9 +486,9 @@ public sealed class RTree<T>
     /// <summary>
     /// Returns a string identifying the type of spatial index, and the version number
     /// </summary>
-    public string getVersion()
+    public string GetVersion()
     {
-        return "RTree-" + version;
+        return "RTree-" + VERSION;
     }
     //-------------------------------------------------------------------------
     // end of SpatialIndex methods
@@ -498,9 +499,9 @@ public sealed class RTree<T>
     /// Get the next available Node&lt;T&gt; ID. Reuse deleted Node&lt;T&gt; IDs if
     /// possible
     /// </summary>
-    private int getNextNodeId()
+    private int GetNextNodeId()
     {
-        int nextNodeId = 0;
+        var nextNodeId = 0;
         if (deletedNodeIds.Count > 0)
         {
             nextNodeId = deletedNodeIds.Pop();
@@ -521,25 +522,16 @@ public sealed class RTree<T>
     /// </summary>
     /// <param name="index"></param>
     /// <returns></returns>
-    private Node<T> getNode(int index)
+    private Node<T> GetNode(int index)
     {
-        return (Node<T>)nodeMap[index];
-    }
-
-    /// <summary>
-    /// Get the highest used Node&lt;T&gt; ID
-    /// </summary>
-    /// <returns></returns>
-    private int getHighestUsedNodeId()
-    {
-        return highestUsedNodeId;
+        return nodeMap[index];
     }
 
     /// <summary>
     /// Get the root Node&lt;T&gt; ID
     /// </summary>
     /// <returns></returns>
-    public int getRootNodeId()
+    public int GetRootNodeId()
     {
         return rootNodeId;
     }
@@ -552,50 +544,50 @@ public sealed class RTree<T>
     /// <param name="newRect"></param>
     /// <param name="newId"></param>
     /// <returns>return new Node&lt;T&gt; object.</returns>
-    private Node<T> splitNode(Node<T> n, Rectangle newRect, int newId)
+    private Node<T> SplitNode(Node<T> n, Rectangle newRect, int newId)
     {
         // [Pick first entry for each group] Apply algorithm pickSeeds to 
         // choose two entries to be the first elements of the groups. Assign
         // each to a group.
 
-        System.Array.Copy(initialEntryStatus, 0, entryStatus, 0, maxNodeEntries);
+        Array.Copy(initialEntryStatus, 0, entryStatus, 0, MaxNodeEntries);
 
         Node<T> newNode = null;
-        newNode = new Node<T>(getNextNodeId(), n.Level, maxNodeEntries);
+        newNode = new Node<T>(GetNextNodeId(), n.Level, MaxNodeEntries);
         nodeMap.Add(newNode.NodeId, newNode);
 
-        pickSeeds(n, newRect, newId, newNode); // this also sets the entryCount to 1
+        PickSeeds(n, newRect, newId, newNode); // this also sets the entryCount to 1
 
         // [Check if done] If all entries have been assigned, stop. If one
         // group has so few entries that all the rest must be assigned to it in 
         // order for it to have the minimum number m, assign them and stop. 
-        while (n.EntryCount + newNode.EntryCount < maxNodeEntries + 1)
+        while (n.EntryCount + newNode.EntryCount < MaxNodeEntries + 1)
         {
-            if (maxNodeEntries + 1 - newNode.EntryCount == minNodeEntries)
+            if (MaxNodeEntries + 1 - newNode.EntryCount == minNodeEntries)
             {
                 // assign all remaining entries to original node
-                for (int i = 0; i < maxNodeEntries; i++)
+                for (var i = 0; i < MaxNodeEntries; i++)
                 {
-                    if (entryStatus[i] == ENTRY_STATUS_UNASSIGNED)
-                    {
-                        entryStatus[i] = ENTRY_STATUS_ASSIGNED;
-                        n.Mbr.Add(n.Entries[i]);
-                        n.EntryCount++;
-                    }
+                    if (entryStatus[i] != ENTRY_STATUS_UNASSIGNED) 
+                        continue;
+                    
+                    entryStatus[i] = ENTRY_STATUS_ASSIGNED;
+                    n.Mbr.Add(n.Entries[i]);
+                    n.EntryCount++;
                 }
                 break;
             }
-            if (maxNodeEntries + 1 - n.EntryCount == minNodeEntries)
+            if (MaxNodeEntries + 1 - n.EntryCount == minNodeEntries)
             {
                 // assign all remaining entries to new node
-                for (int i = 0; i < maxNodeEntries; i++)
+                for (var i = 0; i < MaxNodeEntries; i++)
                 {
-                    if (entryStatus[i] == ENTRY_STATUS_UNASSIGNED)
-                    {
-                        entryStatus[i] = ENTRY_STATUS_ASSIGNED;
-                        newNode.AddEntryNoCopy(n.Entries[i], n.Ids[i]);
-                        n.Entries[i] = null;
-                    }
+                    if (entryStatus[i] != ENTRY_STATUS_UNASSIGNED) 
+                        continue;
+                    
+                    entryStatus[i] = ENTRY_STATUS_ASSIGNED;
+                    newNode.AddEntryNoCopy(n.Entries[i], n.Ids[i]);
+                    n.Entries[i] = null;
                 }
                 break;
             }
@@ -605,7 +597,7 @@ public sealed class RTree<T>
             // will have to be enlarged least to accommodate it. Resolve ties
             // by adding the entry to the group with smaller area, then to the 
             // the one with fewer entries, then to either. Repeat from S2
-            pickNext(n, newNode);
+            PickNext(n, newNode);
         }
 
         n.Reorganize(this);
@@ -621,28 +613,28 @@ public sealed class RTree<T>
     /// <param name="newRect"></param>
     /// <param name="newId"></param>
     /// <param name="newNode"></param>
-    private void pickSeeds(Node<T> n, Rectangle newRect, int newId, Node<T> newNode)
+    private void PickSeeds(Node<T> n, Rectangle newRect, int newId, Node<T> newNode)
     {
         // Find extreme rectangles along all dimension. Along each dimension,
         // find the entry whose rectangle has the highest low side, and the one 
         // with the lowest high side. Record the separation.
         float maxNormalizedSeparation = 0;
-        int highestLowIndex = 0;
-        int lowestHighIndex = 0;
+        var highestLowIndex = 0;
+        var lowestHighIndex = 0;
 
         // for the purposes of picking seeds, take the MBR of the Node&lt;T&gt; to include
         // the new rectangle aswell.
         n.Mbr.Add(newRect);
 
-        for (int d = 0; d < Rectangle.DIMENSIONS; d++)
+        for (var d = 0; d < Rectangle.DIMENSIONS; d++)
         {
             float tempHighestLow = newRect.Min[d];
-            int tempHighestLowIndex = -1; // -1 indicates the new rectangle is the seed
+            var tempHighestLowIndex = -1; // -1 indicates the new rectangle is the seed
 
             float tempLowestHigh = newRect.Max[d];
-            int tempLowestHighIndex = -1;
+            var tempLowestHighIndex = -1;
 
-            for (int i = 0; i < n.EntryCount; i++)
+            for (var i = 0; i < n.EntryCount; i++)
             {
                 float tempLow = n.Entries[i].Min[d];
                 if (tempLow >= tempHighestLow)
@@ -663,16 +655,16 @@ public sealed class RTree<T>
                 // PS2 [Adjust for shape of the rectangle cluster] Normalize the separations
                 // by dividing by the widths of the entire set along the corresponding
                 // dimension
-                float normalizedSeparation = (tempHighestLow - tempLowestHigh) / (n.Mbr.Max[d] - n.Mbr.Min[d]);
+                var normalizedSeparation = (tempHighestLow - tempLowestHigh) / (n.Mbr.Max[d] - n.Mbr.Min[d]);
 
                 // PS3 [Select the most extreme pair] Choose the pair with the greatest
                 // normalized separation along any dimension.
-                if (normalizedSeparation > maxNormalizedSeparation)
-                {
-                    maxNormalizedSeparation = normalizedSeparation;
-                    highestLowIndex = tempHighestLowIndex;
-                    lowestHighIndex = tempLowestHighIndex;
-                }
+                if (!(normalizedSeparation > maxNormalizedSeparation)) 
+                    continue;
+                
+                maxNormalizedSeparation = normalizedSeparation;
+                highestLowIndex = tempHighestLowIndex;
+                lowestHighIndex = tempLowestHighIndex;
             }
         }
 
@@ -714,53 +706,52 @@ public sealed class RTree<T>
     /// <param name="n"></param>
     /// <param name="newNode"></param>
     /// <returns></returns>
-    private int pickNext(Node<T> n, Node<T> newNode)
+    private void PickNext(Node<T> n, Node<T> newNode)
     {
-        float maxDifference = float.NegativeInfinity;
-        int next = 0;
-        int nextGroup = 0;
+        var maxDifference = float.NegativeInfinity;
+        var next = 0;
+        var nextGroup = 0;
 
-        maxDifference = float.NegativeInfinity;
-
-        for (int i = 0; i < maxNodeEntries; i++)
+        for (var i = 0; i < MaxNodeEntries; i++)
         {
-            if (entryStatus[i] == ENTRY_STATUS_UNASSIGNED)
+            if (entryStatus[i] != ENTRY_STATUS_UNASSIGNED) 
+                continue;
+            
+            float nIncrease = n.Mbr.Enlargement(n.Entries[i]);
+            float newNodeIncrease = newNode.Mbr.Enlargement(n.Entries[i]);
+            var difference = Math.Abs(nIncrease - newNodeIncrease);
+
+            if (!(difference > maxDifference)) 
+                continue;
+            
+            next = i;
+
+            if (nIncrease < newNodeIncrease)
             {
-                float nIncrease = n.Mbr.Enlargement(n.Entries[i]);
-                float newNodeIncrease = newNode.Mbr.Enlargement(n.Entries[i]);
-                float difference = Math.Abs(nIncrease - newNodeIncrease);
-
-                if (difference > maxDifference)
-                {
-                    next = i;
-
-                    if (nIncrease < newNodeIncrease)
-                    {
-                        nextGroup = 0;
-                    }
-                    else if (newNodeIncrease < nIncrease)
-                    {
-                        nextGroup = 1;
-                    }
-                    else if (n.Mbr.GetArea() < newNode.Mbr.GetArea())
-                    {
-                        nextGroup = 0;
-                    }
-                    else if (newNode.Mbr.GetArea() < n.Mbr.GetArea())
-                    {
-                        nextGroup = 1;
-                    }
-                    else if (newNode.EntryCount < maxNodeEntries / 2)
-                    {
-                        nextGroup = 0;
-                    }
-                    else
-                    {
-                        nextGroup = 1;
-                    }
-                    maxDifference = difference;
-                }
+                nextGroup = 0;
             }
+            else if (newNodeIncrease < nIncrease)
+            {
+                nextGroup = 1;
+            }
+            else if (n.Mbr.GetArea() < newNode.Mbr.GetArea())
+            {
+                nextGroup = 0;
+            }
+            else if (newNode.Mbr.GetArea() < n.Mbr.GetArea())
+            {
+                nextGroup = 1;
+            }
+            else if (newNode.EntryCount < MaxNodeEntries / 2)
+            {
+                nextGroup = 0;
+            }
+            else
+            {
+                nextGroup = 1;
+            }
+            
+            maxDifference = difference;
         }
 
         entryStatus[next] = ENTRY_STATUS_ASSIGNED;
@@ -776,8 +767,6 @@ public sealed class RTree<T>
             newNode.AddEntryNoCopy(n.Entries[next], n.Ids[next]);
             n.Entries[next] = null;
         }
-
-        return next;
     }
 
 
@@ -792,11 +781,12 @@ public sealed class RTree<T>
     /// <remarks>TODO rewrite this to be non-recursive?</remarks>
     /// <param name="p"></param>
     /// <param name="n"></param>
+    /// <param name="nearestIds"></param>
     /// <param name="nearestDistance"></param>
     /// <returns></returns>
-    private float nearest(Point p, Node<T> n, List<int> nearestIds, float nearestDistance)
+    private float Nearest(Point p, Node<T> n, List<int> nearestIds, float nearestDistance)
     {
-        for (int i = 0; i < n.EntryCount; i++)
+        for (var i = 0; i < n.EntryCount; i++)
         {
             float tempDistance = n.Entries[i].Distance(p);
             if (n.IsLeaf())
@@ -817,7 +807,7 @@ public sealed class RTree<T>
                 if (tempDistance <= nearestDistance)
                 {
                     // search the child node
-                    nearestDistance = nearest(p, getNode(n.Ids[i]), nearestIds, nearestDistance);
+                    nearestDistance = Nearest(p, GetNode(n.Ids[i]), nearestIds, nearestDistance);
                 }
             }
         }
@@ -835,26 +825,26 @@ public sealed class RTree<T>
     /// <param name="r"></param>
     /// <param name="v"></param>
     /// <param name="n"></param>
-    private void intersects(Rectangle r, Action<int> v, Node<T> n)
+    private void Intersects(Rectangle r, Action<int> v, Node<T> n)
     {
-        for (int i = 0; i < n.EntryCount; i++)
+        for (var i = 0; i < n.EntryCount; i++)
         {
-            if (r.Intersects(n.Entries[i]))
+            if (!r.Intersects(n.Entries[i])) 
+                continue;
+            
+            if (n.IsLeaf())
             {
-                if (n.IsLeaf())
-                {
-                    v(n.Ids[i]);
-                }
-                else
-                {
-                    Node<T> childNode = getNode(n.Ids[i]);
-                    intersects(r, v, childNode);
-                }
+                v(n.Ids[i]);
+            }
+            else
+            {
+                var childNode = GetNode(n.Ids[i]);
+                Intersects(r, v, childNode);
             }
         }
     }
 
-    private Rectangle oldRectangle = new Rectangle(0, 0, 0, 0);
+    private readonly Rectangle oldRectangle = new(0, 0, 0, 0);
 
     /// <summary>
     /// Used by delete(). Ensures that all nodes from the passed node
@@ -864,23 +854,21 @@ public sealed class RTree<T>
     /// contain the nodeIds of all parents up to the root.
     /// </para>
     /// </summary>
-    private void condenseTree(Node<T> l)
+    private void CondenseTree(Node<T> l)
     {
         // CT1 [Initialize] Set n=l. Set the list of eliminated
         // nodes to be empty.
-        Node<T> n = l;
-        Node<T> parent = null;
-        int parentEntry = 0;
+        var n = l;
 
         //TIntStack eliminatedNodeIds = new TIntStack();
-        Stack<int> eliminatedNodeIds = new Stack<int>();
+        var eliminatedNodeIds = new Stack<int>();
 
         // CT2 [Find parent entry] If N is the root, go to CT6. Otherwise 
         // let P be the parent of N, and let En be N's entry in P  
         while (n.Level != treeHeight)
         {
-            parent = getNode(parents.Pop());
-            parentEntry = parentsEntry.Pop();
+            var parent = GetNode(parents.Pop());
+            var parentEntry = parentsEntry.Pop();
 
             // CT3 [Eliminiate under-full node] If N has too few entries,
             // delete En from P and add N to the list of eliminated nodes
@@ -911,10 +899,10 @@ public sealed class RTree<T>
         // level as leaves of the main tree
         while (eliminatedNodeIds.Count > 0)
         {
-            Node<T> e = getNode(eliminatedNodeIds.Pop());
-            for (int j = 0; j < e.EntryCount; j++)
+            var e = GetNode(eliminatedNodeIds.Pop());
+            for (var j = 0; j < e.EntryCount; j++)
             {
-                add(e.Entries[j], e.Ids[j], e.Level);
+                Add(e.Entries[j], e.Ids[j], e.Level);
                 e.Entries[j] = null;
             }
             e.EntryCount = 0;
@@ -926,10 +914,10 @@ public sealed class RTree<T>
     /// <summary>
     /// Used by add(). Chooses a leaf to add the rectangle to.
     /// </summary>
-    private Node<T> chooseNode(Rectangle r, int level)
+    private Node<T> ChooseNode(Rectangle r, int level)
     {
         // CL1 [Initialize] Set N to be the root node
-        Node<T> n = getNode(rootNodeId);
+        var n = GetNode(rootNodeId);
         parents.Clear();
         parentsEntry.Clear();
 
@@ -945,10 +933,10 @@ public sealed class RTree<T>
             // whose rectangle FI needs least enlargement to include EI. Resolve
             // ties by choosing the entry with the rectangle of smaller area.
             float leastEnlargement = n.GetEntry(0).Enlargement(r);
-            int index = 0; // index of rectangle in subtree
-            for (int i = 1; i < n.EntryCount; i++)
+            var index = 0; // index of rectangle in subtree
+            for (var i = 1; i < n.EntryCount; i++)
             {
-                Rectangle tempRectangle = n.GetEntry(i);
+                var tempRectangle = n.GetEntry(i);
                 float tempEnlargement = tempRectangle.Enlargement(r);
                 if ((tempEnlargement < leastEnlargement) ||
                     ((tempEnlargement == leastEnlargement) &&
@@ -964,7 +952,7 @@ public sealed class RTree<T>
 
             // CL4 [Descend until a leaf is reached] Set N to be the child Node&lt;T&gt; 
             // pointed to by Fp and repeat from CL2
-            n = getNode(n.Ids[index]);
+            n = GetNode(n.Ids[index]);
         }
     }
 
@@ -972,7 +960,7 @@ public sealed class RTree<T>
     /// Ascend from a leaf Node&lt;T&gt; L to the root, adjusting covering rectangles and
     /// propagating Node&lt;T&gt; splits as necessary.
     /// </summary>
-    private Node<T> adjustTree(Node<T> n, Node<T> nn)
+    private Node<T> AdjustTree(Node<T> n, Node<T> nn)
     {
         // AT1 [Initialize] Set N=L. If L was split previously, set NN to be 
         // the resulting second node.
@@ -980,18 +968,17 @@ public sealed class RTree<T>
         // AT2 [Check if done] If N is the root, stop
         while (n.Level != treeHeight)
         {
-
             // AT3 [Adjust covering rectangle in parent entry] Let P be the parent 
             // Node<T> of N, and let En be N's entry in P. Adjust EnI so that it tightly
             // encloses all entry rectangles in N.
-            Node<T> parent = getNode(parents.Pop());
-            int entry = parentsEntry.Pop();
+            var parent = GetNode(parents.Pop());
+            var entry = parentsEntry.Pop();
 
             if (!parent.Entries[entry].Equals(n.Mbr))
             {
                 parent.Entries[entry].Set(n.Mbr.Min, n.Mbr.Max);
                 parent.Mbr.Set(parent.Entries[0].Min, parent.Entries[0].Max);
-                for (int i = 1; i < parent.EntryCount; i++)
+                for (var i = 1; i < parent.EntryCount; i++)
                 {
                     parent.Mbr.Add(parent.Entries[i]);
                 }
@@ -1005,13 +992,13 @@ public sealed class RTree<T>
             Node<T> newNode = null;
             if (nn != null)
             {
-                if (parent.EntryCount < maxNodeEntries)
+                if (parent.EntryCount < MaxNodeEntries)
                 {
                     parent.AddEntry(nn.Mbr, nn.NodeId);
                 }
                 else
                 {
-                    newNode = splitNode(parent, nn.Mbr.Copy(), nn.NodeId);
+                    newNode = SplitNode(parent, nn.Mbr.Copy(), nn.NodeId);
                 }
             }
 
@@ -1019,9 +1006,6 @@ public sealed class RTree<T>
             // occurred. Repeat from AT2
             n = parent;
             nn = newNode;
-
-            parent = null;
-            newNode = null;
         }
 
         return nn;
@@ -1031,9 +1015,9 @@ public sealed class RTree<T>
     {
         get
         {
-            locker.AcquireReaderLock(locking_timeout);
+            locker.AcquireReaderLock(LOCKING_TIMEOUT);
 
-            var size = this.msize;
+            var size = this.mSize;
 
             locker.ReleaseReaderLock();
 

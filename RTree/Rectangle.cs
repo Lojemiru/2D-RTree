@@ -103,10 +103,11 @@ public sealed class Rectangle
         if ((Min.Length < dimension) || (Max.Length < dimension))
             return null;
         
-        var retval = new Dimension();
-        retval.Min = Min[dimension];
-        retval.Max = Max[dimension];
-        return retval;
+        return new Dimension
+        {
+            Min = Min[dimension],
+            Max = Max[dimension]
+        };
     }
 
     /// <summary>

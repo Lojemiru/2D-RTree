@@ -66,7 +66,7 @@ namespace RTree.Test
         [TestMethod]
         public void TestBounds()
         {
-            var bounds = Instance.getBounds();
+            var bounds = Instance.GetBounds();
             //X
             Assert.AreEqual(0, bounds.Get(0).Value.Min);
             Assert.AreEqual(3, bounds.Get(0).Value.Max);

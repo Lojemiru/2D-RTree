@@ -139,7 +139,7 @@ internal sealed class Node<T>
     /// </summary>
     internal void Reorganize(RTree<T> rtree)
     {
-        var countdownIndex = rtree.maxNodeEntries - 1;
+        var countdownIndex = rtree.MaxNodeEntries - 1;
         for (var index = 0; index < EntryCount; index++)
         {
             if (Entries[index] != null) 
