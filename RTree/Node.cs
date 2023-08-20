@@ -23,7 +23,7 @@ namespace RTree;
 /// <summary>
 /// Used by RTree. There are no public methods in this class.
 /// </summary>
-internal class Node<T>
+internal sealed class Node<T>
 {
     internal readonly int NodeId;
     internal Rectangle Mbr;
@@ -43,15 +43,15 @@ internal class Node<T>
     internal void AddEntry(Rectangle r, int id)
     {
         Ids[EntryCount] = id;
-        Entries[EntryCount] = r.copy();
+        Entries[EntryCount] = r.Copy();
         EntryCount++;
         if (Mbr == null)
         {
-            Mbr = r.copy();
+            Mbr = r.Copy();
         }
         else
         {
-            Mbr.add(r);
+            Mbr.Add(r);
         }
     }
 
@@ -62,11 +62,11 @@ internal class Node<T>
         EntryCount++;
         if (Mbr == null)
         {
-            Mbr = r.copy();
+            Mbr = r.Copy();
         }
         else
         {
-            Mbr.add(r);
+            Mbr.Add(r);
         }
     }
 
@@ -118,14 +118,14 @@ internal class Node<T>
     /// </summary>
     internal void RecalculateMbr(Rectangle deletedRectangle)
     {
-        if (!Mbr.edgeOverlaps(deletedRectangle)) 
+        if (!Mbr.EdgeOverlaps(deletedRectangle)) 
             return;
         
-        Mbr.set(Entries[0].Min, Entries[0].Max);
+        Mbr.Set(Entries[0].Min, Entries[0].Max);
 
         for (var i = 1; i < EntryCount; i++)
         {
-            Mbr.add(Entries[i]);
+            Mbr.Add(Entries[i]);
         }
     }
 

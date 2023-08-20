@@ -45,7 +45,7 @@ namespace RTree;
 /// Ported to C# By Dror Gluska, April 9th, 2009
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class RTree<T>
+public sealed class RTree<T>
 {
     private const int locking_timeout = 10000;
 
@@ -180,7 +180,7 @@ public class RTree<T>
     private void add(Rectangle r, int id)
     {
 
-        add(r.copy(), id, 1);
+        add(r.Copy(), id, 1);
 
         msize++;
     }
@@ -282,7 +282,7 @@ public class RTree<T>
                 bool contains = false;
                 for (int i = startIndex; i < n.EntryCount; i++)
                 {
-                    if (n.Entries[i].contains(r))
+                    if (n.Entries[i].Contains(r))
                     {
                         parents.Push(n.Ids[i]);
                         parentsEntry.Pop();
@@ -433,7 +433,7 @@ public class RTree<T>
                 bool intersects = false;
                 for (int i = startIndex; i < n.EntryCount; i++)
                 {
-                    if (r.intersects(n.Entries[i]))
+                    if (r.Intersects(n.Entries[i]))
                     {
                         _parents.Push(n.Ids[i]);
                         _parentsEntry.Pop();
@@ -454,7 +454,7 @@ public class RTree<T>
                 // it is contained by the passed rectangle
                 for (int i = 0; i < n.EntryCount; i++)
                 {
-                    if (r.contains(n.Entries[i]))
+                    if (r.Contains(n.Entries[i]))
                     {
                         v(n.Ids[i]);
                     }
@@ -476,7 +476,7 @@ public class RTree<T>
         Node<T> n = getNode(getRootNodeId());
         if (n != null && n.Mbr != null)
         {
-            bounds = n.Mbr.copy();
+            bounds = n.Mbr.Copy();
         }
         locker.ReleaseReaderLock();
         return bounds;
@@ -579,7 +579,7 @@ public class RTree<T>
                     if (entryStatus[i] == ENTRY_STATUS_UNASSIGNED)
                     {
                         entryStatus[i] = ENTRY_STATUS_ASSIGNED;
-                        n.Mbr.add(n.Entries[i]);
+                        n.Mbr.Add(n.Entries[i]);
                         n.EntryCount++;
                     }
                 }
@@ -632,7 +632,7 @@ public class RTree<T>
 
         // for the purposes of picking seeds, take the MBR of the Node&lt;T&gt; to include
         // the new rectangle aswell.
-        n.Mbr.add(newRect);
+        n.Mbr.Add(newRect);
 
         for (int d = 0; d < Rectangle.DIMENSIONS; d++)
         {
@@ -699,7 +699,7 @@ public class RTree<T>
 
         entryStatus[lowestHighIndex] = ENTRY_STATUS_ASSIGNED;
         n.EntryCount = 1;
-        n.Mbr.set(n.Entries[lowestHighIndex].Min, n.Entries[lowestHighIndex].Max);
+        n.Mbr.Set(n.Entries[lowestHighIndex].Min, n.Entries[lowestHighIndex].Max);
     }
 
 
@@ -726,8 +726,8 @@ public class RTree<T>
         {
             if (entryStatus[i] == ENTRY_STATUS_UNASSIGNED)
             {
-                float nIncrease = n.Mbr.enlargement(n.Entries[i]);
-                float newNodeIncrease = newNode.Mbr.enlargement(n.Entries[i]);
+                float nIncrease = n.Mbr.Enlargement(n.Entries[i]);
+                float newNodeIncrease = newNode.Mbr.Enlargement(n.Entries[i]);
                 float difference = Math.Abs(nIncrease - newNodeIncrease);
 
                 if (difference > maxDifference)
@@ -742,11 +742,11 @@ public class RTree<T>
                     {
                         nextGroup = 1;
                     }
-                    else if (n.Mbr.area() < newNode.Mbr.area())
+                    else if (n.Mbr.GetArea() < newNode.Mbr.GetArea())
                     {
                         nextGroup = 0;
                     }
-                    else if (newNode.Mbr.area() < n.Mbr.area())
+                    else if (newNode.Mbr.GetArea() < n.Mbr.GetArea())
                     {
                         nextGroup = 1;
                     }
@@ -767,7 +767,7 @@ public class RTree<T>
 
         if (nextGroup == 0)
         {
-            n.Mbr.add(n.Entries[next]);
+            n.Mbr.Add(n.Entries[next]);
             n.EntryCount++;
         }
         else
@@ -798,7 +798,7 @@ public class RTree<T>
     {
         for (int i = 0; i < n.EntryCount; i++)
         {
-            float tempDistance = n.Entries[i].distance(p);
+            float tempDistance = n.Entries[i].Distance(p);
             if (n.IsLeaf())
             { // for leaves, the distance is an actual nearest distance 
                 if (tempDistance < nearestDistance)
@@ -839,7 +839,7 @@ public class RTree<T>
     {
         for (int i = 0; i < n.EntryCount; i++)
         {
-            if (r.intersects(n.Entries[i]))
+            if (r.Intersects(n.Entries[i]))
             {
                 if (n.IsLeaf())
                 {
@@ -895,8 +895,8 @@ public class RTree<T>
                 // adjust EnI to tightly contain all entries in N
                 if (!n.Mbr.Equals(parent.Entries[parentEntry]))
                 {
-                    oldRectangle.set(parent.Entries[parentEntry].Min, parent.Entries[parentEntry].Max);
-                    parent.Entries[parentEntry].set(n.Mbr.Min, n.Mbr.Max);
+                    oldRectangle.Set(parent.Entries[parentEntry].Min, parent.Entries[parentEntry].Max);
+                    parent.Entries[parentEntry].Set(n.Mbr.Min, n.Mbr.Max);
                     parent.RecalculateMbr(oldRectangle);
                 }
             }
@@ -944,15 +944,15 @@ public class RTree<T>
             // CL3 [Choose subtree] If N is not at the desired level, let F be the entry in N 
             // whose rectangle FI needs least enlargement to include EI. Resolve
             // ties by choosing the entry with the rectangle of smaller area.
-            float leastEnlargement = n.GetEntry(0).enlargement(r);
+            float leastEnlargement = n.GetEntry(0).Enlargement(r);
             int index = 0; // index of rectangle in subtree
             for (int i = 1; i < n.EntryCount; i++)
             {
                 Rectangle tempRectangle = n.GetEntry(i);
-                float tempEnlargement = tempRectangle.enlargement(r);
+                float tempEnlargement = tempRectangle.Enlargement(r);
                 if ((tempEnlargement < leastEnlargement) ||
                     ((tempEnlargement == leastEnlargement) &&
-                     (tempRectangle.area() < n.GetEntry(index).area())))
+                     (tempRectangle.GetArea() < n.GetEntry(index).GetArea())))
                 {
                     index = i;
                     leastEnlargement = tempEnlargement;
@@ -989,11 +989,11 @@ public class RTree<T>
 
             if (!parent.Entries[entry].Equals(n.Mbr))
             {
-                parent.Entries[entry].set(n.Mbr.Min, n.Mbr.Max);
-                parent.Mbr.set(parent.Entries[0].Min, parent.Entries[0].Max);
+                parent.Entries[entry].Set(n.Mbr.Min, n.Mbr.Max);
+                parent.Mbr.Set(parent.Entries[0].Min, parent.Entries[0].Max);
                 for (int i = 1; i < parent.EntryCount; i++)
                 {
-                    parent.Mbr.add(parent.Entries[i]);
+                    parent.Mbr.Add(parent.Entries[i]);
                 }
             }
 
@@ -1011,7 +1011,7 @@ public class RTree<T>
                 }
                 else
                 {
-                    newNode = splitNode(parent, nn.Mbr.copy(), nn.NodeId);
+                    newNode = splitNode(parent, nn.Mbr.Copy(), nn.NodeId);
                 }
             }
 

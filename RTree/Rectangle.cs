@@ -56,7 +56,7 @@ public sealed class Rectangle
     {
         Min = new int[DIMENSIONS];
         Max = new int[DIMENSIONS];
-        set(x1, y1, x2, y2);
+        Set(x1, y1, x2, y2);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class Rectangle
         Min = new int[DIMENSIONS];
         Max = new int[DIMENSIONS];
 
-        set(min, max);
+        Set(min, max);
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public sealed class Rectangle
     /// <param name="y1">coordinate of any corner of the rectangle</param>
     /// <param name="x2">coordinate of the opposite corner</param>
     /// <param name="y2">coordinate of the opposite corner</param>
-    internal void set(int x1, int y1, int x2, int y2)
+    internal void Set(int x1, int y1, int x2, int y2)
     {
         Min[0] = Math.Min(x1, x2);
         Min[1] = Math.Min(y1, y2);
@@ -98,16 +98,15 @@ public sealed class Rectangle
     /// <para>probable dimensions:</para>
     /// <para>X = 0, Y = 1, Z = 2</para>
     /// </summary>
-    public Dimension? get(int dimension)
+    public Dimension? Get(int dimension)
     {
-        if ((Min.Length >= dimension) && (Max.Length >= dimension))
-        {
-            Dimension retval = new Dimension();
-            retval.Min = Min[dimension];
-            retval.Max = Max[dimension];
-            return retval;
-        }
-        return null;
+        if ((Min.Length < dimension) || (Max.Length < dimension))
+            return null;
+        
+        var retval = new Dimension();
+        retval.Min = Min[dimension];
+        retval.Max = Max[dimension];
+        return retval;
     }
 
     /// <summary>
@@ -115,10 +114,10 @@ public sealed class Rectangle
     /// </summary>
     /// <param name="min">min array containing the minimum value for each dimension; ie { min(x), min(y) }</param>
     /// <param name="max">max array containing the maximum value for each dimension; ie { max(x), max(y) }</param>
-    internal void set(int[] min, int[] max)
+    internal void Set(int[] min, int[] max)
     {
-        Array.Copy(min, 0, this.Min, 0, DIMENSIONS);
-        Array.Copy(max, 0, this.Max, 0, DIMENSIONS);
+        Array.Copy(min, 0, Min, 0, DIMENSIONS);
+        Array.Copy(max, 0, Max, 0, DIMENSIONS);
     }
 
 
@@ -126,7 +125,7 @@ public sealed class Rectangle
     /// Make a copy of this rectangle
     /// </summary>
     /// <returns>copy of this rectangle</returns>
-    internal Rectangle copy()
+    internal Rectangle Copy()
     {
         return new Rectangle(Min, Max);
     }
@@ -135,7 +134,7 @@ public sealed class Rectangle
     /// Determine whether an edge of this rectangle overlies the equivalent 
     /// edge of the passed rectangle
     /// </summary>
-    internal bool edgeOverlaps(Rectangle r)
+    internal bool EdgeOverlaps(Rectangle r)
     {
         for (var i = 0; i < DIMENSIONS; i++)
         {
@@ -152,7 +151,7 @@ public sealed class Rectangle
     /// </summary>
     /// <param name="r">The rectangle that might intersect this rectangle</param>
     /// <returns>true if the rectangles intersect, false if they do not intersect</returns>
-    internal bool intersects(Rectangle r)
+    internal bool Intersects(Rectangle r)
     {
         // Every dimension must intersect. If any dimension
         // does not intersect, return false immediately.
@@ -171,7 +170,7 @@ public sealed class Rectangle
     /// </summary>
     /// <param name="r">The rectangle that might be contained by this rectangle</param>
     /// <returns>true if this rectangle contains the passed rectangle, false if it does not</returns>
-    internal bool contains(Rectangle r)
+    internal bool Contains(Rectangle r)
     {
         for (var i = 0; i < DIMENSIONS; i++)
         {
@@ -184,30 +183,12 @@ public sealed class Rectangle
     }
 
     /// <summary>
-    /// Determine whether this rectangle is contained by the passed rectangle
-    /// </summary>
-    /// <param name="r">The rectangle that might contain this rectangle</param>
-    /// <returns>true if the passed rectangle contains this rectangle, false if it does not</returns>
-    internal bool containedBy(Rectangle r)
-    {
-        for (var i = 0; i < DIMENSIONS; i++)
-        {
-            if (Max[i] > r.Max[i] || Min[i] < r.Min[i])
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
-    /// <summary>
     /// Return the distance between this rectangle and the passed point.
     /// If the rectangle contains the point, the distance is zero.
     /// </summary>
     /// <param name="p">Point to find the distance to</param>
     /// <returns>distance between this rectangle and the passed point.</returns>
-    internal int distance(Point p)
+    internal int Distance(Point p)
     {
         var distanceSquared = 0;
         for (var i = 0; i < DIMENSIONS; i++)
@@ -223,67 +204,6 @@ public sealed class Rectangle
     }
 
     /// <summary>
-    /// Return the distance between this rectangle and the passed rectangle.
-    /// If the rectangles overlap, the distance is zero.
-    /// </summary>
-    /// <param name="r">Rectangle to find the distance to</param>
-    /// <returns>distance between this rectangle and the passed rectangle</returns>
-    internal int distance(Rectangle r)
-    {
-        var distanceSquared = 0;
-        for (var i = 0; i < DIMENSIONS; i++)
-        {
-            var greatestMin = Math.Max(Min[i], r.Min[i]);
-            var leastMax = Math.Min(Max[i], r.Max[i]);
-            if (greatestMin > leastMax)
-            {
-                distanceSquared += ((greatestMin - leastMax) * (greatestMin - leastMax));
-            }
-        }
-        return (int)Math.Sqrt(distanceSquared);
-    }
-
-    /// <summary>
-    /// Return the squared distance from this rectangle to the passed point
-    /// </summary>
-    internal int distanceSquared(int dimension, int point)
-    {
-        var distanceSquared = 0;
-        var tempDistance = point - Max[dimension];
-        for (var i = 0; i < 2; i++)
-        {
-            if (tempDistance > 0)
-            {
-                distanceSquared = (tempDistance * tempDistance);
-                break;
-            }
-            tempDistance = Min[dimension] - point;
-        }
-        return distanceSquared;
-    }
-
-    /// <summary>
-    /// Return the furthst possible distance between this rectangle and
-    /// the passed rectangle. 
-    /// </summary>
-    internal int furthestDistance(Rectangle r)
-    {
-        //Find the distance between this rectangle and each corner of the
-        //passed rectangle, and use the maximum.
-
-        var distanceSquared = 0;
-
-        for (int i = 0; i < DIMENSIONS; i++)
-        {
-            distanceSquared += Math.Max(r.Min[i], r.Max[i]);
-#warning possible didn't convert properly
-            //distanceSquared += Math.Max(distanceSquared(i, r.min[i]), distanceSquared(i, r.max[i]));
-        }
-
-        return (int)Math.Sqrt(distanceSquared);
-    }
-
-    /// <summary>
     /// Calculate the area by which this rectangle would be enlarged if
     /// added to the passed rectangle. Neither rectangle is altered.
     /// </summary>
@@ -292,19 +212,19 @@ public sealed class Rectangle
     /// compute the difference in area of the union and the
     /// original rectangle
     /// </param>
-    internal int enlargement(Rectangle r)
+    internal int Enlargement(Rectangle r)
     {
         var enlargedArea = (Math.Max(Max[0], r.Max[0]) - Math.Min(Min[0], r.Min[0])) *
                            (Math.Max(Max[1], r.Max[1]) - Math.Min(Min[1], r.Min[1]));
 
-        return enlargedArea - area();
+        return enlargedArea - GetArea();
     }
 
     /// <summary>
     /// Compute the area of this rectangle.
     /// </summary>
     /// <returns> The area of this rectangle</returns>
-    internal int area()
+    internal int GetArea()
     {
         return (Max[0] - Min[0]) * (Max[1] - Min[1]);
     }
@@ -315,7 +235,7 @@ public sealed class Rectangle
     /// the result in this rectangle.
     /// </summary>
     /// <param name="r">Rectangle to add to this rectangle</param>
-    internal void add(Rectangle r)
+    internal void Add(Rectangle r)
     {
         for (var i = 0; i < DIMENSIONS; i++)
         {
@@ -330,18 +250,6 @@ public sealed class Rectangle
         }
     }
 
-    /// <summary>
-    /// Find the the union of this rectangle and the passed rectangle.
-    /// Neither rectangle is altered
-    /// </summary>
-    /// <param name="r">The rectangle to union with this rectangle</param>
-    internal Rectangle union(Rectangle r)
-    {
-        var union = copy();
-        union.add(r);
-        return union;
-    }
-
     private static bool CompareArrays(int[] a1, int[] a2)
     {
         if ((a1 == null) || (a2 == null))
@@ -349,7 +257,7 @@ public sealed class Rectangle
         if (a1.Length != a2.Length)
             return false;
 
-        for (int i = 0; i < a1.Length; i++)
+        for (var i = 0; i < a1.Length; i++)
             if (a1[i] != a2[i])
                 return false;
         return true;
@@ -363,41 +271,16 @@ public sealed class Rectangle
     /// <returns></returns>
     public override bool Equals(object obj)
     {
-        var equals = false;
-        if (obj is Rectangle)
-        {
-            Rectangle r = (Rectangle)obj;
-#warning possible didn't convert properly
-            if (CompareArrays(r.Min, Min) && CompareArrays(r.Max, Max))
-            {
-                equals = true;
-            }
-        }
-        return equals;
+        if (obj is not Rectangle rectangle) 
+            return false;
+        
+        return CompareArrays(rectangle.Min, Min) && CompareArrays(rectangle.Max, Max);
     }
 
 
     public override int GetHashCode()
     {
         return ToString().GetHashCode();
-    }
-
-
-    /// <summary>
-    /// Determine whether this rectangle is the same as another object
-    /// <para>
-    /// Note that two rectangles can be equal but not the same object,
-    /// if they both have the same bounds.
-    /// </para>
-    /// </summary>
-    /// <param name="o">
-    /// Note that two rectangles can be equal but not the same object,
-    /// if they both have the same bounds.
-    /// </param>
-    /// <returns></returns>
-    internal bool sameObject(object o)
-    {
-        return base.Equals(o);
     }
 
     /// <summary>
