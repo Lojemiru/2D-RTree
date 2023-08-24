@@ -13,6 +13,11 @@
     <PackageTags>rtree, spatial index</PackageTags>
     <PackageId>2D-RTree</PackageId>
     <Product>2D-RTree</Product>
+    <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="LICENSE.txt"/>
+  </ItemGroup>
 
 </Project>
