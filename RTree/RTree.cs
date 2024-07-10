@@ -337,16 +337,14 @@ public sealed class RTree<T>
     {
         var retval = new List<T>();
         locker.AcquireReaderLock(LOCKING_TIMEOUT);
-        Nearest(p,  (id) =>
-        {
-            retval.Add(idsToItems[id]);
-        }, furthestDistance);
+        Nearest(p, retval, furthestDistance);
         locker.ReleaseReaderLock();
         return retval;
     }
 
 
-    private void Nearest(Point p, Action<int> v, float furthestDistance)
+    
+    private void Nearest(Point p, List<T> l, float furthestDistance)
     {
         var rootNode = GetNode(rootNodeId);
 
@@ -355,7 +353,7 @@ public sealed class RTree<T>
         Nearest(p, rootNode, nearestIds, furthestDistance);
 
         foreach (var id in nearestIds)
-            v(id);
+            l.Add(idsToItems[id]);
         
         nearestIds.Clear();
     }
@@ -369,19 +367,16 @@ public sealed class RTree<T>
     {
         var retval = new List<T>();
         locker.AcquireReaderLock(LOCKING_TIMEOUT);
-        Intersects(r, (int id)=>
-        {
-            retval.Add(idsToItems[id]);
-        });
+        Intersects(r, retval);
         locker.ReleaseReaderLock();
         return retval;
     }
 
 
-    private void Intersects(Rectangle r, Action<int> v)
+    private void Intersects(Rectangle r, List<T> l)
     {
         var rootNode = GetNode(rootNodeId);
-        Intersects(r, v, rootNode);
+        Intersects(r, l, rootNode);
     }
 
     /// <summary>
@@ -393,16 +388,12 @@ public sealed class RTree<T>
     {
         var retval = new List<T>();
         locker.AcquireReaderLock(LOCKING_TIMEOUT);
-        Contains(r, (id) =>
-        {
-            retval.Add(idsToItems[id]);
-        });
-
+        Contains(r, retval);
         locker.ReleaseReaderLock();
         return retval;
     }
 
-    private void Contains(Rectangle r, Action<int> v)
+    private void Contains(Rectangle r, List<T> l)
     {
         var _parents = new Stack<int>();
         //private TIntStack parentsEntry = new TIntStack();
@@ -457,7 +448,7 @@ public sealed class RTree<T>
                 {
                     if (r.Contains(n.Entries[i]))
                     {
-                        v(n.Ids[i]);
+                        l.Add(idsToItems[n.Ids[i]]);
                     }
                 }
             }
@@ -823,9 +814,10 @@ public sealed class RTree<T>
     /// doesn't slow it down.
     /// </summary>
     /// <param name="r"></param>
+    /// <param name="l"></param>
     /// <param name="v"></param>
     /// <param name="n"></param>
-    private void Intersects(Rectangle r, Action<int> v, Node<T> n)
+    private void Intersects(Rectangle r, List<T> l, Node<T> n)
     {
         for (var i = 0; i < n.EntryCount; i++)
         {
@@ -834,12 +826,12 @@ public sealed class RTree<T>
             
             if (n.IsLeaf())
             {
-                v(n.Ids[i]);
+                l.Add(idsToItems[n.Ids[i]]);
             }
             else
             {
                 var childNode = GetNode(n.Ids[i]);
-                Intersects(r, v, childNode);
+                Intersects(r, l, childNode);
             }
         }
     }
